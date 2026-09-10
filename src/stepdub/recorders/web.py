@@ -12,7 +12,7 @@ are separate on purpose: a recorder that only exists inside a "wait until the us
 presses Enter" loop cannot be tested against a real browser, and this one is - see
 `tests/test_e2e_web.py`.
 
-Playwright is only needed here. The rest of encore (IR, transforms, codegen) reads and
+Playwright is only needed here. The rest of stepdub (IR, transforms, codegen) reads and
 writes recordings with no browser installed.
 """
 
@@ -34,14 +34,14 @@ if TYPE_CHECKING:  # pragma: no cover
 
 INJECTED_JS = Path(__file__).with_name("injected.js")
 
-BINDING = "__encore_emit"
+BINDING = "__stepdub_emit"
 
 # How often to pump Playwright's event loop while recording.
 _TICK_MS = 200
 
 _INSTALL_HINT = (
     "the web recorder needs Playwright:\n"
-    '    pip install "encore-recorder[web]"\n'
+    '    pip install "stepdub[web]"\n'
     "    playwright install chromium"
 )
 

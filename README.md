@@ -1,16 +1,16 @@
-# encore
+# stepdub
 
 Record what you do on your computer and get **readable Python that does it again**.
 
 It is the idea behind Excel's macro recorder — hit record, do the work, walk away with
 code — but outside Excel: the browser first, desktop and native applications next. And
 what comes out is not a proprietary format. It is a Python file you can read, edit,
-commit, and keep maintaining long after you uninstall encore.
+commit, and keep maintaining long after you uninstall stepdub.
 
 ```bash
-encore record https://example.com/login --name weekly-report
+stepdub record https://example.com/login --name weekly-report
 # ... sign in, search, download the file ...
-encore gen weekly-report --param 6=term
+stepdub gen weekly-report --param 6=term
 ```
 
 Out comes this:
@@ -23,8 +23,8 @@ def run(page: Page, *, term: str, download_dir: Path = Path("downloads")) -> lis
 
     page.goto(START_URL)
     page.get_by_label("Username").fill("pedro")
-    # value comes from ENCORE_PASSWORD, it was never recorded
-    page.get_by_label("Password").fill(os.environ["ENCORE_PASSWORD"])
+    # value comes from STEPDUB_PASSWORD, it was never recorded
+    page.get_by_label("Password").fill(os.environ["STEPDUB_PASSWORD"])
     page.locator("#btn-signin").click()
 
     search_fleet = page.get_by_role("searchbox", name="Search fleet")
@@ -60,7 +60,7 @@ Four things in that output are the whole project:
 ## Install
 
 ```bash
-pip install "encore-recorder[web]"
+pip install "stepdub[web]"
 playwright install chromium
 ```
 
@@ -68,12 +68,12 @@ playwright install chromium
 
 | Command | What it does |
 |---|---|
-| `encore record <url>` | opens the browser and records until you press Enter |
-| `encore list` | your recordings |
-| `encore show <name>` | the steps, cleaned up, with the ids you can parameterise |
-| `encore gen <name>` | writes the Python file |
-| `encore where` | where the data is stored |
-| `encore purge --all` | deletes everything |
+| `stepdub record <url>` | opens the browser and records until you press Enter |
+| `stepdub list` | your recordings |
+| `stepdub show <name>` | the steps, cleaned up, with the ids you can parameterise |
+| `stepdub gen <name>` | writes the Python file |
+| `stepdub where` | where the data is stored |
+| `stepdub purge --all` | deletes everything |
 
 The normal loop is `record` → `show` (to see which steps survived and pick your
 parameters) → `gen`.
@@ -83,11 +83,11 @@ parameters) → `gen`.
 A tool that records what you do on your computer owes you a straight answer about
 this, so it all lives in [docs/PRIVACY.md](docs/PRIVACY.md). The short version:
 
-- **Zero network.** encore sends nothing anywhere. No telemetry, no "anonymous stats",
+- **Zero network.** stepdub sends nothing anywhere. No telemetry, no "anonymous stats",
   no automatic crash reports.
 - **Password fields are never recorded.** Detection happens at the point of capture,
   not in a filter downstream — the value never enters the process.
-- **Everything is local**, under `~/.encore`, and `encore purge --all` removes it.
+- **Everything is local**, under `~/.stepdub`, and `stepdub purge --all` removes it.
 - **While recording, a visible indicator sits on the page.** There is no silent mode
   and no autostart, and there will not be — see [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -95,9 +95,9 @@ this, so it all lives in [docs/PRIVACY.md](docs/PRIVACY.md). The short version:
 
 Worth being straight about: for the pure web case,
 [`playwright codegen`](https://playwright.dev/python/docs/codegen) is already excellent
-and you should know it exists. encore diverges on four points:
+and you should know it exists. stepdub diverges on four points:
 
-| | `playwright codegen` | Power Automate / UiPath | encore |
+| | `playwright codegen` | Power Automate / UiPath | stepdub |
 |---|---|---|---|
 | Web | ✅ | ✅ | ✅ |
 | Desktop and native apps | ❌ | ✅ | planned (v0.3+) |

@@ -1,4 +1,4 @@
-"""The encore intermediate representation (IR).
+"""The stepdub intermediate representation (IR).
 
 A recording is a sequence of `Event`. Recorders write into this; transforms and
 code generators read only from this. No external dependencies, on purpose: reading,

@@ -12,11 +12,11 @@ from pathlib import Path
 
 import pytest
 
-from encore import session
-from encore.codegen import GenOptions, generate
-from encore.ir import Action, Event, Selector, SelectorKind, Target
-from encore.session import Recording, RecordingMeta
-from encore.transforms import run_pipeline
+from stepdub import session
+from stepdub.codegen import GenOptions, generate
+from stepdub.ir import Action, Event, Selector, SelectorKind, Target
+from stepdub.session import Recording, RecordingMeta
+from stepdub.transforms import run_pipeline
 
 FIXTURES = Path(__file__).parent / "fixtures"
 GOLDEN = Path(__file__).parent / "golden"
@@ -74,10 +74,10 @@ class TestSecrets:
     def test_a_secret_value_never_appears_in_the_code(self, recording):
         code = gen(recording, params=PARAMS)
         assert "p4ssw0rd" not in code
-        assert 'os.environ["ENCORE_PASSWORD"]' in code
+        assert 'os.environ["STEPDUB_PASSWORD"]' in code
 
     def test_the_header_states_which_variables_are_needed(self, recording):
-        assert "ENCORE_PASSWORD" in gen(recording, params=PARAMS).split('"""')[1]
+        assert "STEPDUB_PASSWORD" in gen(recording, params=PARAMS).split('"""')[1]
 
     def test_without_secrets_os_is_not_imported(self):
         rec = one_event_recording(

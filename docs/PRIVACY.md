@@ -1,6 +1,6 @@
 # Privacy
 
-This document exists because encore technically has the same capability as a keylogger.
+This document exists because stepdub technically has the same capability as a keylogger.
 Pretending otherwise would be dishonest. Here is exactly what the tool does, what it
 does not do, and what it will never do.
 
@@ -32,24 +32,24 @@ During a recording, and **only** during a recording:
 
 Two independent layers enforce the password rule: `injected.js` does not send the
 value, and the data model **refuses to exist** with a value on an event marked as a
-secret (`src/encore/ir.py`, `Event.__post_init__`). If a future recorder tries, it
+secret (`src/stepdub/ir.py`, `Event.__post_init__`). If a future recorder tries, it
 raises instead of writing to disk.
 
 ## Where it lives
 
-Everything under `~/.encore/recordings/<name>/`, two files per recording: `meta.json`
+Everything under `~/.stepdub/recordings/<name>/`, two files per recording: `meta.json`
 and `events.jsonl`.
 
 ```bash
-encore where        # prints the exact path on this machine
-encore purge --all  # deletes everything
+stepdub where        # prints the exact path on this machine
+stepdub purge --all  # deletes everything
 ```
 
-You can move it with the `ENCORE_HOME` environment variable.
+You can move it with the `STEPDUB_HOME` environment variable.
 
 ## Network
 
-encore makes no network requests at all. No telemetry, no version checks, no usage
+stepdub makes no network requests at all. No telemetry, no version checks, no usage
 statistics, no error reporting. The browser Playwright opens goes where you send it and
 nowhere else.
 
@@ -67,12 +67,12 @@ A request for any of these is declined, and the reason is recorded in
 
 ## Your responsibility
 
-encore runs on your machine, with your permissions, and records what you tell it to
+stepdub runs on your machine, with your permissions, and records what you tell it to
 record. Two things stay with you:
 
 1. **Recordings are sensitive data.** An `events.jsonl` can contain names, customer
    numbers, internal references — everything you typed while recording. Do not commit
-   them. This project's `.gitignore` already ignores `.encore/`, but that protects this
+   them. This project's `.gitignore` already ignores `.stepdub/`, but that protects this
    repository, not yours.
 2. **If you automate an organisation's systems, in the EU that may be processing of
    personal data**, and the responsibility sits with whoever records, not with the

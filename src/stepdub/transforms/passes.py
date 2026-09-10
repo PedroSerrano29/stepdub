@@ -129,7 +129,7 @@ def normalize_secret_refs(events: Sequence[Event]) -> tuple[Event, ...]:
     """Normalize the environment variable names used for secrets.
 
     Takes whatever the recorder could infer (the field name, its id, its label) and
-    turns it into a valid, predictable name: `ENCORE_PASSWORD`, `ENCORE_PIN`.
+    turns it into a valid, predictable name: `STEPDUB_PASSWORD`, `STEPDUB_PIN`.
     """
     out: list[Event] = []
     for ev in events:
@@ -139,8 +139,8 @@ def normalize_secret_refs(events: Sequence[Event]) -> tuple[Event, ...]:
         ref = _SECRET_REF_INVALID.sub("_", ev.secret_ref.upper()).strip("_")
         if not ref:
             ref = f"SECRET_{ev.id}"
-        if not ref.startswith("ENCORE_"):
-            ref = f"ENCORE_{ref}"
+        if not ref.startswith("STEPDUB_"):
+            ref = f"STEPDUB_{ref}"
         out.append(replace(ev, secret_ref=ref) if ref != ev.secret_ref else ev)
     return tuple(out)
 

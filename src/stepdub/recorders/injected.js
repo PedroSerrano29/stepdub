@@ -10,8 +10,8 @@
 // already left this file.
 
 (() => {
-  if (window.__encore_installed) return;
-  window.__encore_installed = true;
+  if (window.__stepdub_installed) return;
+  window.__stepdub_installed = true;
 
   const MAX_TEXT = 80;
   const MAX_TEXT_SELECTOR = 40;
@@ -28,7 +28,7 @@
 
   const emit = (payload) => {
     try {
-      if (window.__encore_emit) window.__encore_emit(payload);
+      if (window.__stepdub_emit) window.__stepdub_emit(payload);
     } catch (err) {
       // page closing, or the binding is not registered yet: losing one event beats
       // throwing inside the user's page
@@ -38,11 +38,11 @@
   // Visible recording indicator. This is not decoration: while this is capturing, it
   // has to be obvious on screen that it is capturing.
   const showBanner = () => {
-    if (!document.body || document.getElementById("__encore_banner")) return;
+    if (!document.body || document.getElementById("__stepdub_banner")) return;
     if (window !== window.top) return;
     const el = document.createElement("div");
-    el.id = "__encore_banner";
-    el.textContent = "encore ● recording";
+    el.id = "__stepdub_banner";
+    el.textContent = "stepdub ● recording";
     el.setAttribute(
       "style",
       [
@@ -223,7 +223,7 @@
     "click",
     (e) => {
       const el = actionable(e.target);
-      if (!el || el.id === "__encore_banner") return;
+      if (!el || el.id === "__stepdub_banner") return;
       emit({ action: "click", target: targetOf(el), context: { url: location.href } });
     },
     true,

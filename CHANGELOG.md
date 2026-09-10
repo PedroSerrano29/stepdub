@@ -12,11 +12,15 @@ message.
 
 First working version. Web layer only.
 
+Named `stepdub`. The project was built as `encore` and renamed before release: that
+name's CLI command already belongs to another tool and its PyPI name was taken. See
+ADR-009 in `docs/DECISIONS.md`.
+
 ### Added
 
 - Versioned intermediate representation (`SCHEMA_VERSION = 1`): `Selector`, `Target`,
   `Event`, with candidate selectors ranked by robustness.
-- Append-only JSONL recordings under `~/.encore`, flushed per event, with a `meta.json`
+- Append-only JSONL recordings under `~/.stepdub`, flushed per event, with a `meta.json`
   header per recording.
 - Five pure transformation passes: `drop_focus_clicks`, `coalesce_typing`,
   `insert_waits`, `normalize_secret_refs`, `renumber`.
@@ -34,4 +38,4 @@ First working version. Web layer only.
 - Password fields are detected at capture time and their values never enter the
   recording, enforced in two independent layers.
 - No network calls of any kind. No telemetry.
-- `encore where` and `encore purge --all` make storage inspectable and removable.
+- `stepdub where` and `stepdub purge --all` make storage inspectable and removable.

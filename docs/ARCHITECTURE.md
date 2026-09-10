@@ -18,7 +18,7 @@ steps on a PC is not one problem — it is four, at four levels of fidelity:
 | 3. DOM | `<button id="login">` | Playwright + CDP + injected JS | Very good |
 | 4. Native API | `ws.Range("A1").Value = 5` | `win32com`, SAP GUI Scripting | Best |
 
-**encore's bet:** do not pick a layer. Record several at once into a single event
+**stepdub's bet:** do not pick a layer. Record several at once into a single event
 stream, and pick the highest-fidelity representation available for each action at code
 generation time. The user clicked pixels; what comes out is
 `page.get_by_role("button", name="Login").click()`.
@@ -62,7 +62,7 @@ events. Five reasons not to:
 
 ## The types, and the invariant that matters
 
-In `src/encore/ir.py`:
+In `src/stepdub/ir.py`:
 
 - **`Selector`** — one way to find an element (`kind`, `value`, `score` 0-100).
 - **`Target`** — the element, with **every** candidate ordered by robustness. A single
@@ -92,7 +92,7 @@ links is recording an ambiguity.
 
 ## The passes, and why the order is not arbitrary
 
-In `src/encore/transforms/`:
+In `src/stepdub/transforms/`:
 
 1. `drop_focus_clicks` — clicking a field before typing in it is not a step of the
    process, it is the cursor being placed.
@@ -100,7 +100,7 @@ In `src/encore/transforms/`:
    value comes out. If any event in the group is a secret, the result is a secret —
    never the other way round.
 3. `insert_waits` — long pauses become waits **for the element**, never `sleep`.
-4. `normalize_secret_refs` — the field's name becomes `ENCORE_PASSWORD`.
+4. `normalize_secret_refs` — the field's name becomes `STEPDUB_PASSWORD`.
 5. `renumber` — sequential ids, because the passes above insert and remove events.
 
 The order is forced: clean clicks before merging typing (a click in the middle blocks
@@ -113,10 +113,10 @@ written tomorrow may want it.
 
 ## The generator, and the tension that defines it
 
-`src/encore/codegen/playwright_py.py` resolves two requirements that contradict each
+`src/stepdub/codegen/playwright_py.py` resolves two requirements that contradict each
 other:
 
-- **Readability** (the file must be maintainable by hand after encore is gone) wants
+- **Readability** (the file must be maintainable by hand after stepdub is gone) wants
   the good selector, inline, and nothing else.
 - **Resilience** wants the fallback cascade in the code.
 

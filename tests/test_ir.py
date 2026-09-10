@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from encore.ir import (
+from stepdub.ir import (
     DEFAULT_SCORE,
     Action,
     Event,
@@ -81,7 +81,7 @@ class TestSecretInvariant:
                 target=a_target(),
                 value="p4ssw0rd",
                 is_secret=True,
-                secret_ref="ENCORE_PASSWORD",
+                secret_ref="STEPDUB_PASSWORD",
             )
 
     def test_a_secret_without_a_ref_raises(self):
@@ -96,7 +96,7 @@ class TestSecretInvariant:
                 action=Action.FILL,
                 target=a_target(),
                 value="hi",
-                secret_ref="ENCORE_X",
+                secret_ref="STEPDUB_X",
             )
 
     def test_a_valid_secret_is_accepted(self):
@@ -106,7 +106,7 @@ class TestSecretInvariant:
             action=Action.FILL,
             target=a_target(),
             is_secret=True,
-            secret_ref="ENCORE_PASSWORD",
+            secret_ref="STEPDUB_PASSWORD",
         )
         assert ev.value is None
         assert "p4ssw0rd" not in str(ev.to_dict())
@@ -153,7 +153,7 @@ class TestEvent:
             action=Action.FILL,
             target=a_target(),
             is_secret=True,
-            secret_ref="ENCORE_PASSWORD",
+            secret_ref="STEPDUB_PASSWORD",
         )
         assert Event.from_dict(original.to_dict()) == original
 

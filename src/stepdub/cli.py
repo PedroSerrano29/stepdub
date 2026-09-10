@@ -24,7 +24,7 @@ def _when(created_at: str) -> str:
 
 
 def _fail(msg: str) -> int:
-    print(f"encore: {msg}", file=sys.stderr)
+    print(f"stepdub: {msg}", file=sys.stderr)
     return 1
 
 
@@ -70,14 +70,14 @@ def cmd_record(args: argparse.Namespace) -> int:
     except RecorderError as err:
         return _fail(str(err))
     print(f"recorded in {folder}")
-    print(f"next:  encore gen {folder.name}")
+    print(f"next:  stepdub gen {folder.name}")
     return 0
 
 
 def cmd_list(_args: argparse.Namespace) -> int:
     metas = list(session.iter_recordings())
     if not metas:
-        print("no recordings yet. Start with:  encore record https://example.com")
+        print("no recordings yet. Start with:  stepdub record https://example.com")
         return 0
     print(f"{'slug':<28} {'events':>7}  {'when':<16}  url")
     for meta in metas:
@@ -167,9 +167,9 @@ def cmd_purge(args: argparse.Namespace) -> int:
 
 
 def cmd_where(_args: argparse.Namespace) -> int:
-    print(f"encore data:  {session.home()}")
+    print(f"stepdub data:  {session.home()}")
     print(f"recordings:   {session.recordings_dir()}")
-    print("nothing leaves this machine. To delete everything:  encore purge --all")
+    print("nothing leaves this machine. To delete everything:  stepdub purge --all")
     print(f"to move it elsewhere, set {session.ENV_HOME}")
     return 0
 
@@ -179,10 +179,10 @@ def cmd_where(_args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="encore",
+        prog="stepdub",
         description="Record what you do and get Python that does it again.",
     )
-    p.add_argument("--version", action="version", version=f"encore {__version__}")
+    p.add_argument("--version", action="version", version=f"stepdub {__version__}")
     subs = p.add_subparsers(dest="command", required=True)
 
     rec = subs.add_parser("record", help="record a browser session")
@@ -208,7 +208,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--param",
         action="append",
         metavar="ID=NAME",
-        help="turn the value of event ID into a parameter (see `encore show`)",
+        help="turn the value of event ID into a parameter (see `stepdub show`)",
     )
     gen.add_argument("--function", default="run", help="name of the generated function")
     gen.add_argument("--no-main", action="store_true", help="function only, no main()")
@@ -220,7 +220,7 @@ def build_parser() -> argparse.ArgumentParser:
     purge.add_argument("--all", action="store_true")
     purge.set_defaults(func=cmd_purge)
 
-    where = subs.add_parser("where", help="where encore stores its data")
+    where = subs.add_parser("where", help="where stepdub stores its data")
     where.set_defaults(func=cmd_where)
 
     return p
@@ -229,7 +229,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     # Recorded values carry whatever characters the page had. On a console whose
     # encoding cannot represent them, printing must degrade, not crash - otherwise
-    # `encore show > file.txt` dies on Windows over one accented character.
+    # `stepdub show > file.txt` dies on Windows over one accented character.
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="backslashreplace")
 

@@ -1,6 +1,6 @@
 # Recordings contain real screen and keyboard data from whoever recorded them.
 # This is the most important entry in this file. Do not remove it.
-.encore/
+.stepdub/
 *.jsonl
 # Exception: the synthetic test recordings hold nobody's real data.
 !tests/fixtures/**/*.jsonl

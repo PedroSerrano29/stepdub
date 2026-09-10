@@ -18,7 +18,7 @@ mypy
 pytest
 ```
 
-CI runs the same four. `mypy` is strict on `src/encore`.
+CI runs the same four. `mypy` is strict on `src/stepdub`.
 
 ## Rules that are not negotiable
 
@@ -41,7 +41,7 @@ starts recording without the person at the keyboard doing so, is out of scope
 permanently, not "not yet". See ADR in [docs/DECISIONS.md](docs/DECISIONS.md).
 
 **5. Generated code must be maintainable by hand.** The test: could someone delete
-encore and keep editing the output? No `sleep`, no unreadable selector soup, no
+stepdub and keep editing the output? No `sleep`, no unreadable selector soup, no
 generated helper the reader has to decode.
 
 ## Adding a transformation pass
@@ -60,8 +60,8 @@ the diff, confirm it is what you meant, then update the golden file:
 ```bash
 python -c "import sys; sys.path.insert(0,'src'); \
 from pathlib import Path; from dataclasses import replace; \
-from encore import session; from encore.transforms import run_pipeline; \
-from encore.codegen import generate, GenOptions; \
+from stepdub import session; from stepdub.transforms import run_pipeline; \
+from stepdub.codegen import generate, GenOptions; \
 rec = session.load('login_search', root=Path('tests/fixtures')); \
 rec = replace(rec, events=run_pipeline(rec.events)); \
 Path('tests/golden/login_search.py.expected').write_bytes( \
@@ -79,8 +79,8 @@ required, bumps `SCHEMA_VERSION` and needs a note in
 
 ## Reporting bugs
 
-Include the `encore --version`, your OS, and — if the problem is in generated code —
-the relevant lines of `encore show <name> --raw`. **Read that output before pasting it:
+Include the `stepdub --version`, your OS, and — if the problem is in generated code —
+the relevant lines of `stepdub show <name> --raw`. **Read that output before pasting it:
 it may contain data from the site you were recording.**
 
 A privacy hole (data escaping where it should not) is the highest-priority category in

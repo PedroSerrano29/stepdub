@@ -7,15 +7,15 @@ from pathlib import Path
 
 import pytest
 
-from encore.cli import _parse_params, _when, main
+from stepdub.cli import _parse_params, _when, main
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
 @pytest.fixture
 def home(tmp_path, monkeypatch) -> Path:
-    """ENCORE_HOME pointed at tmp, with the test recording already in place."""
-    monkeypatch.setenv("ENCORE_HOME", str(tmp_path))
+    """STEPDUB_HOME pointed at tmp, with the test recording already in place."""
+    monkeypatch.setenv("STEPDUB_HOME", str(tmp_path))
     shutil.copytree(FIXTURES / "login_search", tmp_path / "recordings" / "login_search")
     return tmp_path
 
@@ -41,9 +41,9 @@ class TestParseParams:
 
 class TestList:
     def test_with_no_recordings_it_suggests_the_first_command(self, tmp_path, monkeypatch, capsys):
-        monkeypatch.setenv("ENCORE_HOME", str(tmp_path))
+        monkeypatch.setenv("STEPDUB_HOME", str(tmp_path))
         assert main(["list"]) == 0
-        assert "encore record" in capsys.readouterr().out
+        assert "stepdub record" in capsys.readouterr().out
 
     def test_it_lists_the_recording_with_its_event_count(self, home, capsys):
         assert main(["list"]) == 0
@@ -82,16 +82,16 @@ class TestShow:
 
     def test_it_announces_the_environment_variable(self, home, capsys):
         assert main(["show", "login_search"]) == 0
-        assert "ENCORE_PASSWORD" in capsys.readouterr().out
+        assert "STEPDUB_PASSWORD" in capsys.readouterr().out
 
     def test_the_secret_shows_up_marked_and_without_a_value(self, home, capsys):
         assert main(["show", "login_search"]) == 0
-        assert "<secret: ENCORE_PASSWORD>" in capsys.readouterr().out
+        assert "<secret: STEPDUB_PASSWORD>" in capsys.readouterr().out
 
     def test_a_missing_recording_gives_a_readable_error(self, home, capsys):
         assert main(["show", "does-not-exist"]) == 1
         err = capsys.readouterr().err
-        assert err.startswith("encore: ")
+        assert err.startswith("stepdub: ")
         assert "Traceback" not in err
 
 
@@ -132,7 +132,7 @@ class TestGen:
     def test_it_says_which_variables_to_set(self, home, tmp_path, monkeypatch, capsys):
         monkeypatch.chdir(tmp_path)
         assert main(["gen", "login_search"]) == 0
-        assert "ENCORE_PASSWORD" in capsys.readouterr().out
+        assert "STEPDUB_PASSWORD" in capsys.readouterr().out
 
     def test_no_main_generates_the_function_only(self, home, capsys):
         assert main(["gen", "login_search", "--stdout", "--no-main"]) == 0
@@ -185,4 +185,4 @@ class TestParser:
         with pytest.raises(SystemExit) as exc:
             main(["--version"])
         assert exc.value.code == 0
-        assert "encore" in capsys.readouterr().out
+        assert "stepdub" in capsys.readouterr().out

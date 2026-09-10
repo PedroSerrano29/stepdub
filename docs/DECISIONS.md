@@ -147,3 +147,37 @@ documentation over a Portuguese codebase. (c) English everywhere.
 would have been better prose. But the stated goal is a tool anyone can use, (b) reads
 as inconsistent to any contributor, and translating a codebase after it has forks and
 issues is far more expensive than translating it now.
+
+---
+
+## ADR-009 — Named stepdub, after `encore` turned out to be taken
+
+**Context.** The project was built under the name `encore`, chosen for the theatre
+metaphor: an encore is a performance repeated on request.
+
+**Alternatives.** (a) Keep `encore` as the project name and publish on PyPI as
+`encore-recorder`, which was free. (b) Keep the name and rename only the CLI command.
+(c) Pick a different name entirely.
+
+**Choice.** (c) — `stepdub`. `step` is the unit of this domain (an `Event` is one
+step) and `dub` is to re-record.
+
+**Trade-off accepted.** The theatre metaphor is weaker, and a made-up word has no
+meaning to lean on the first time someone reads it. In exchange, two blocking problems
+go away. `encore` is already the CLI command of [encore.dev](https://encore.dev), a
+prominent open-source backend framework: two binaries called `encore` on one PATH is a
+hard conflict, not a branding preference, and "encore python" would never have found
+this tool. The PyPI name `encore` is also taken (Enthought, last released 2022) and
+would have stayed taken forever.
+
+Verified free before choosing: PyPI, npm and GitHub. The only hits for "stepdub" are
+music tracks, which do not compete for a developer's search. Two other candidates were
+rejected on the same check: `remimic` belongs to an active deepfake product — a
+terrible neighbour for a tool that has to argue it is not spyware — and `maczo` is
+taken by a musician and an Apple reseller, and its "mac" prefix suggests macOS, the one
+platform this project does not support.
+
+**Timing was the point.** The rename touched the package directory, `pyproject.toml`,
+the `STEPDUB_` environment variable prefix, `~/.stepdub`, the injected JavaScript's
+globals and every document, in one commit. Once users have recordings on disk and
+generated scripts reading `ENCORE_PASSWORD`, the same change becomes a migration.

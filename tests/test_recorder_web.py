@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import pytest
 
-from encore.ir import Action, SelectorKind
-from encore.recorders import web
-from encore.session import RecordingMeta, RecordingWriter
+from stepdub.ir import Action, SelectorKind
+from stepdub.recorders import web
+from stepdub.session import RecordingMeta, RecordingWriter
 
 
 def payload(**kw: object) -> dict[str, object]:
@@ -33,8 +33,8 @@ def payload(**kw: object) -> dict[str, object]:
 
 class TestNoBrowserNeeded:
     def test_importing_the_recorder_does_not_require_playwright(self):
-        """The module is imported by the CLI on every run, including `encore list`."""
-        assert web.BINDING == "__encore_emit"
+        """The module is imported by the CLI on every run, including `stepdub list`."""
+        assert web.BINDING == "__stepdub_emit"
 
     def test_a_missing_playwright_produces_installation_instructions(self, monkeypatch):
         def explode(*_a: object, **_k: object) -> None:
@@ -53,11 +53,11 @@ class TestInjectedAsset:
     def test_it_carries_the_privacy_guards(self):
         js = web.INJECTED_JS.read_text(encoding="utf-8")
         assert "isSecret" in js
-        assert "__encore_installed" in js
+        assert "__stepdub_installed" in js
         assert "capture" in js
 
     def test_the_recording_indicator_exists(self):
-        assert "__encore_banner" in web.INJECTED_JS.read_text(encoding="utf-8")
+        assert "__stepdub_banner" in web.INJECTED_JS.read_text(encoding="utf-8")
 
 
 class TestTargetFromPayload:

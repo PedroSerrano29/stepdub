@@ -2,7 +2,7 @@
 
 Everything else in the suite runs without a browser. This file is the exception, and
 it is skipped when Playwright is not installed, which is also how CI runs. It exists
-because the recorder is the one part of encore that cannot be proven correct by
+because the recorder is the one part of stepdub that cannot be proven correct by
 reasoning about pure functions: either the injected JS really produces good selectors
 in a live DOM, or it does not.
 
@@ -18,12 +18,12 @@ import pytest
 
 pytest.importorskip("playwright", reason="needs: pip install playwright && playwright install")
 
-from encore import session
-from encore.codegen import GenOptions, generate
-from encore.ir import Action, SelectorKind
-from encore.recorders.web import WebRecorder
-from encore.session import Recording, RecordingMeta, RecordingWriter
-from encore.transforms import run_pipeline
+from stepdub import session
+from stepdub.codegen import GenOptions, generate
+from stepdub.ir import Action, SelectorKind
+from stepdub.recorders.web import WebRecorder
+from stepdub.session import Recording, RecordingMeta, RecordingWriter
+from stepdub.transforms import run_pipeline
 
 PAGE = (Path(__file__).parent / "pages" / "login.html").resolve().as_uri()
 
@@ -175,7 +175,7 @@ class TestTheRecordingIndicator:
         with RecordingWriter(meta, root=tmp_path) as w, WebRecorder(w, headless=True) as rec:
             rec.open(PAGE)
             rec.pump(200)
-            banner = rec.page.locator("#__encore_banner")
+            banner = rec.page.locator("#__stepdub_banner")
             assert banner.count() == 1
             assert "recording" in banner.inner_text()
 
@@ -186,12 +186,12 @@ class TestTheRecordingIndicator:
             rec.open(PAGE)
             rec.page.reload()
             rec.pump(200)
-            assert rec.page.locator("#__encore_banner").count() == 1
+            assert rec.page.locator("#__stepdub_banner").count() == 1
 
 
 class TestLifecycle:
     def test_using_the_page_outside_the_with_block_raises(self, tmp_path):
-        from encore.recorders.web import RecorderError
+        from stepdub.recorders.web import RecorderError
 
         meta = RecordingMeta.new("x", "x")
         with RecordingWriter(meta, root=tmp_path) as w:
@@ -200,7 +200,7 @@ class TestLifecycle:
                 _ = rec.page
 
     def test_an_unknown_browser_fails_with_a_readable_message(self, tmp_path):
-        from encore.recorders.web import RecorderError
+        from stepdub.recorders.web import RecorderError
 
         meta = RecordingMeta.new("x", "x")
         with RecordingWriter(meta, root=tmp_path) as w:  # noqa: SIM117

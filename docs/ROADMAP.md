@@ -16,15 +16,15 @@ and each one should be usable by someone who never reads this file.
 - [x] End-to-end verification of the recorder against a real browser, driven from a
       local test page (`tests/pages/login.html`), skipped when Playwright is absent
 - [ ] CI green on GitHub Actions
-- [ ] Published on PyPI (name `encore-recorder` not yet claimed)
+- [ ] Published on PyPI (name `stepdub` not yet claimed)
 
 ## v0.2 — Parameters and ergonomics
 
-- [ ] `encore edit <name>`: drop, reorder and annotate steps without regenerating
+- [ ] `stepdub edit <name>`: drop, reorder and annotate steps without regenerating
 - [ ] Parameter inference: offer likely candidates instead of requiring `--param 6=x`
 - [ ] Secrets read from `keyring` as an alternative to environment variables
 - [ ] `--resilient` generator flag: emit the full fallback cascade (see ADR-004)
-- [ ] `encore run <name>`: replay straight from the IR, no code generation
+- [ ] `stepdub run <name>`: replay straight from the IR, no code generation
 - [ ] Better failure messages when a selector no longer matches
 
 ## v0.3 — Windows desktop
@@ -57,11 +57,11 @@ and each one should be usable by someone who never reads this file.
 
 Unresolved items from ongoing review. Each with a date and a `file:line` pointer.
 
-- [ ] 2026-09-10 — `src/encore/recorders/web.py:188` the recording loop only watches the
+- [ ] 2026-09-10 — `src/stepdub/recorders/web.py:188` the recording loop only watches the
       first page. If the user closes that tab but keeps working in a second one opened
       from it, the loop stops while the context is still alive. Needs to track the
       context rather than one page.
-- [ ] 2026-09-10 — `src/encore/recorders/injected.js:200` `uniqueText` runs a full
+- [ ] 2026-09-10 — `src/stepdub/recorders/injected.js:200` `uniqueText` runs a full
       `querySelectorAll` on every click. Fine for normal pages, potentially slow on very
       large DOMs. Measure before optimising.
 - [ ] 2026-09-10 — no recorder covers `contenteditable` beyond a plain `fill`; rich text
@@ -69,5 +69,5 @@ Unresolved items from ongoing review. Each with a date and a `file:line` pointer
 - [ ] 2026-09-10 — running `tests/test_e2e_web.py` leaves a `Task was destroyed but it
       is pending` message on stderr after the suite passes. It comes from Playwright's
       own connection teardown when `start()`/`stop()` runs several times in one
-      process, not from encore. Cosmetic, but it looks like a failure to a newcomer:
+      process, not from stepdub. Cosmetic, but it looks like a failure to a newcomer:
       either find the right teardown order or run the e2e file in its own process.

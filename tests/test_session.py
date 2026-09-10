@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from encore import session
-from encore.ir import Action, Event, Selector, SelectorKind, Target
+from stepdub import session
+from stepdub.ir import Action, Event, Selector, SelectorKind, Target
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -48,7 +48,7 @@ class TestHome:
 
     def test_default_is_under_the_user_home(self, monkeypatch):
         monkeypatch.delenv(session.ENV_HOME, raising=False)
-        assert session.home() == Path.home() / ".encore"
+        assert session.home() == Path.home() / ".stepdub"
 
 
 class TestWritingAndReading:
@@ -109,7 +109,7 @@ class TestLoadingTheFixture:
         (folder / session.META_FILE).write_text(
             json.dumps({"slug": "future", "schema": 999}), encoding="utf-8"
         )
-        with pytest.raises(session.RecordingError, match="upgrade encore"):
+        with pytest.raises(session.RecordingError, match="upgrade stepdub"):
             session.load("future", root=tmp_path)
 
 

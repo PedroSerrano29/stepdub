@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from encore import session
-from encore.ir import Action, Event, Selector, SelectorKind, Target
-from encore.transforms import (
+from stepdub import session
+from stepdub.ir import Action, Event, Selector, SelectorKind, Target
+from stepdub.transforms import (
     DEFAULT_PIPELINE,
     coalesce_typing,
     drop_focus_clicks,
@@ -153,11 +153,11 @@ class TestInsertWaits:
 class TestNormalizeSecretRefs:
     def test_the_field_name_becomes_an_environment_variable(self):
         e = ev(1, 0.0, Action.FILL, field("P"), None, is_secret=True, secret_ref="user-password")
-        assert normalize_secret_refs([e])[0].secret_ref == "ENCORE_USER_PASSWORD"
+        assert normalize_secret_refs([e])[0].secret_ref == "STEPDUB_USER_PASSWORD"
 
     def test_the_prefix_is_not_doubled(self):
-        e = ev(1, 0.0, Action.FILL, field("P"), None, is_secret=True, secret_ref="ENCORE_PIN")
-        assert normalize_secret_refs([e])[0].secret_ref == "ENCORE_PIN"
+        e = ev(1, 0.0, Action.FILL, field("P"), None, is_secret=True, secret_ref="STEPDUB_PIN")
+        assert normalize_secret_refs([e])[0].secret_ref == "STEPDUB_PIN"
 
     def test_ordinary_events_are_untouched(self):
         e = ev(1, 0.0, Action.FILL, field("A"), "visible")
@@ -200,7 +200,7 @@ class TestFullPipeline:
         secrets = [e for e in run_pipeline(self.load()) if e.is_secret]
         assert len(secrets) == 1
         assert secrets[0].value is None
-        assert secrets[0].secret_ref == "ENCORE_PASSWORD"
+        assert secrets[0].secret_ref == "STEPDUB_PASSWORD"
 
     def test_the_pipeline_does_not_mutate_its_input(self):
         given = list(self.load())
