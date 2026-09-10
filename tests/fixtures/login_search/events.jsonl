@@ -1,0 +1,12 @@
+{"id": 1, "ts": 0.0, "action": "navigate", "layer": "dom", "value": "https://example.com/login"}
+{"id": 2, "ts": 1.0, "action": "click", "layer": "dom", "target": {"candidates": [{"kind": "label", "value": "Username", "score": 75}, {"kind": "css", "value": "#user", "score": 30}], "tag": "input", "text_preview": ""}}
+{"id": 3, "ts": 1.2, "action": "fill", "layer": "dom", "target": {"candidates": [{"kind": "label", "value": "Username", "score": 75}, {"kind": "css", "value": "#user", "score": 30}], "tag": "input"}, "value": "p"}
+{"id": 4, "ts": 1.4, "action": "fill", "layer": "dom", "target": {"candidates": [{"kind": "label", "value": "Username", "score": 75}, {"kind": "css", "value": "#user", "score": 30}], "tag": "input"}, "value": "pe"}
+{"id": 5, "ts": 1.6, "action": "fill", "layer": "dom", "target": {"candidates": [{"kind": "label", "value": "Username", "score": 75}, {"kind": "css", "value": "#user", "score": 30}], "tag": "input"}, "value": "pedro"}
+{"id": 6, "ts": 2.0, "action": "click", "layer": "dom", "target": {"candidates": [{"kind": "label", "value": "Password", "score": 75}], "tag": "input"}}
+{"id": 7, "ts": 2.2, "action": "fill", "layer": "dom", "target": {"candidates": [{"kind": "label", "value": "Password", "score": 75}], "tag": "input"}, "is_secret": true, "secret_ref": "password"}
+{"id": 8, "ts": 3.0, "action": "click", "layer": "dom", "target": {"candidates": [{"kind": "role", "value": "button|Sign in", "score": 80}, {"kind": "id", "value": "btn-signin", "score": 90}, {"kind": "css", "value": "form > div:nth-child(3) > button", "score": 30}], "tag": "button", "text_preview": "Sign in"}}
+{"id": 9, "ts": 8.0, "action": "fill", "layer": "dom", "target": {"candidates": [{"kind": "role", "value": "searchbox|Search fleet", "score": 80}, {"kind": "placeholder", "value": "Search fleet", "score": 65}], "tag": "input"}, "value": "café tables"}
+{"id": 10, "ts": 8.5, "action": "press", "layer": "dom", "value": "Enter"}
+{"id": 11, "ts": 12.5, "action": "click", "layer": "dom", "target": {"candidates": [{"kind": "text", "value": "Export CSV", "score": 55}, {"kind": "css", "value": "div.toolbar > a:nth-child(2)", "score": 30}, {"kind": "xpath", "value": "//div[@class='toolbar']/a[2]", "score": 20}], "tag": "a", "text_preview": "Export CSV"}}
+{"id": 12, "ts": 13.0, "action": "download", "layer": "dom", "value": "results.csv"}
