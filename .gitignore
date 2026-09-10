@@ -1,0 +1,33 @@
+# Recordings contain real screen and keyboard data from whoever recorded them.
+# This is the most important entry in this file. Do not remove it.
+.encore/
+*.jsonl
+# Exception: the synthetic test recordings hold nobody's real data.
+!tests/fixtures/**/*.jsonl
+
+# Local instructions for Claude Code - not part of the public deliverable
+docs/CLAUDE.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Output from manual testing
+downloads/
+out/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
