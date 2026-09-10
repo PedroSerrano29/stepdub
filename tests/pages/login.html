@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>encore test page</title>
+    <style>
+      body { font: 15px system-ui, sans-serif; margin: 2rem; max-width: 40rem; }
+      label { display: block; margin: 0.8rem 0 0.2rem; }
+      input, select { padding: 0.3rem; width: 18rem; }
+      .toolbar { margin-top: 1.5rem; }
+      .hidden { display: none; }
+    </style>
+  </head>
+  <body>
+    <!-- A local page, so the end-to-end test never depends on the internet or on
+         somebody else's site staying the same. Deliberately includes: a password
+         field, a label-only field, a generated-looking id, a duplicated link text,
+         and a download. -->
+    <h1>Fleet</h1>
+
+    <form id="signin" onsubmit="return signIn(event)">
+      <label for="user">Username</label>
+      <input id="user" name="username" type="text" autocomplete="username" />
+
+      <label for="pw">Password</label>
+      <input id="pw" name="password" type="password" autocomplete="current-password" />
+
+      <div class="toolbar">
+        <button id="btn-signin" type="submit">Sign in</button>
+      </div>
+    </form>
+
+    <div id="app" class="hidden">
+      <label for="q">Search fleet</label>
+      <input id="q" type="search" placeholder="Search fleet" />
+
+      <label for="cat">Category</label>
+      <select id="cat">
+        <option value="all">All</option>
+        <option value="vans">Vans</option>
+      </select>
+
+      <label><input id="ember1234" type="checkbox" /> Only available</label>
+
+      <div class="toolbar">
+        <a href="#" id="link-details">Details</a>
+        <a href="#" onclick="return downloadCsv()">Export CSV</a>
+        <a href="#" id="other-details">Details</a>
+      </div>
+    </div>
+
+    <script>
+      function signIn(event) {
+        event.preventDefault();
+        // A deliberate delay, so the recorder sees a pause worth turning into a wait.
+        setTimeout(() => {
+          document.getElementById("signin").classList.add("hidden");
+          document.getElementById("app").classList.remove("hidden");
+        }, 2400);
+        return false;
+      }
+
+      function downloadCsv() {
+        const blob = new Blob(["plate,model\nAA-01-BB,Van\n"], { type: "text/csv" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "results.csv";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        return false;
+      }
+    </script>
+  </body>
+</html>

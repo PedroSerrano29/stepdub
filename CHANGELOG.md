@@ -8,11 +8,6 @@ message.
 
 ## [Unreleased]
 
-### Not yet verified
-
-- The web recorder has not been exercised end to end against a real browser. Its pure
-  halves are covered by tests; the Playwright-driving half is not.
-
 ## [0.1.0] — unreleased
 
 First working version. Web layer only.
@@ -30,6 +25,9 @@ First working version. Web layer only.
 - Web recorder: JS injected into every frame, Playwright binding, download and new-tab
   handling, visible recording indicator.
 - CLI: `record`, `list`, `show`, `gen`, `purge`, `where`.
+- End-to-end test suite driving a real browser against a local page, verifying selector
+  quality, the recording indicator, and that a typed password reaches neither the
+  recording nor the generated code. Skipped when Playwright is not installed.
 
 ### Security and privacy
 

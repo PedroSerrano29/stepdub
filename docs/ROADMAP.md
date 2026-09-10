@@ -13,9 +13,8 @@ and each one should be usable by someone who never reads this file.
 - [x] Web recorder: injected JS + Playwright binding, download and new-tab handling
 - [x] CLI: `record`, `list`, `show`, `gen`, `purge`, `where`
 - [x] Test suite that runs with no browser installed
-- [ ] **End-to-end verification of the recorder against a real browser** — the only
-      part of v0.1 not yet exercised. Needs `playwright install chromium` and a run
-      against a local test page.
+- [x] End-to-end verification of the recorder against a real browser, driven from a
+      local test page (`tests/pages/login.html`), skipped when Playwright is absent
 - [ ] CI green on GitHub Actions
 - [ ] Published on PyPI (name `encore-recorder` not yet claimed)
 
@@ -67,3 +66,8 @@ Unresolved items from ongoing review. Each with a date and a `file:line` pointer
       large DOMs. Measure before optimising.
 - [ ] 2026-09-10 — no recorder covers `contenteditable` beyond a plain `fill`; rich text
       editors will produce partial recordings.
+- [ ] 2026-09-10 — running `tests/test_e2e_web.py` leaves a `Task was destroyed but it
+      is pending` message on stderr after the suite passes. It comes from Playwright's
+      own connection teardown when `start()`/`stop()` runs several times in one
+      process, not from encore. Cosmetic, but it looks like a failure to a newcomer:
+      either find the right teardown order or run the e2e file in its own process.
