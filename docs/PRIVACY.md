@@ -57,7 +57,8 @@ nowhere else.
 
 These are not missing features. They are decisions:
 
-- **Silent or hidden mode.** While recording, there is a visible indicator on the page.
+- **Silent or hidden mode.** While recording, there is a visible indicator on the page,
+  in every tab, including tabs opened during the recording.
 - **Starting automatically with the system.** Does not exist, will not exist.
 - **Disguising the process.** The process is named what it is.
 - **Background capture not started by the person at the keyboard.**

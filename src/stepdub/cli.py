@@ -13,7 +13,7 @@ from pathlib import Path
 
 from . import __version__, session
 from .codegen import GenOptions, generate
-from .ir import ACTIONS_PARAMETERIZABLE, Event
+from .ir import ACTIONS_PARAMETERIZABLE, Action, Event, page_of
 from .session import RecordingError
 from .transforms import run_pipeline
 
@@ -41,12 +41,14 @@ def _parse_params(pairs: list[str] | None) -> dict[int, str]:
 
 def _summary(ev: Event) -> str:
     """One readable line per event, for the `show` command."""
-    target = ""
+    target = f"[page {page_of(ev)}] " if page_of(ev) > 1 else ""
     if ev.target is not None:
         sel = ev.target.best
-        target = f"{sel.kind.value}={sel.value}"
+        target += f"{sel.kind.value}={sel.value}"
     if ev.is_secret:
         value = f"<secret: {ev.secret_ref}>"
+    elif ev.action is Action.POPUP:
+        value = f"opened from page {ev.context.get('opener', 1)}"
     elif ev.value is not None:
         value = repr(ev.value)
     else:

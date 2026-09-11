@@ -7,6 +7,9 @@ It has two halves, and it matters that they are two:
 * this module runs in Python, receives those events over a binding, and handles what
   only exists on this side: downloads, navigations, new tabs.
 
+Pages are numbered in the order they appear, and every event carries the number of the
+page it happened in (ADR-011).
+
 `WebRecorder` is the engine and `record()` is the interactive wrapper around it. They
 are separate on purpose: a recorder that only exists inside a "wait until the user
 presses Enter" loop cannot be tested against a real browser, and this one is - see
@@ -40,6 +43,9 @@ BROWSERS = ("chromium", "firefox", "webkit")
 
 # How often to pump Playwright's event loop while recording.
 _TICK_MS = 200
+
+# A tab opened by hand starts here; none of these is a place to start a recording from.
+_BLANK_SCHEMES = ("about:", "chrome:", "edge:")
 
 _INSTALL_HINT = (
     "the web recorder needs Playwright:\n"
@@ -115,7 +121,9 @@ class _Session:
     def ts(self) -> float:
         return time.monotonic() - self.start
 
-    def record(self, data: dict[str, Any]) -> None:
+    def record(self, data: dict[str, Any], page: int = 1) -> None:
+        if page > 1:  # no number means the first page, so one-tab recordings stay lean
+            data = {**data, "context": {**data.get("context", {}), "page": page}}
         try:
             ev = event_from_payload(data, self.next_id, self.ts())
         except (ValueError, KeyError) as err:
@@ -125,16 +133,14 @@ class _Session:
         self.writer.append(ev)
         self.next_id += 1
 
-    def record_navigate(self, url: str) -> None:
-        self.record({"action": "navigate", "value": url})
+    def record_navigate(self, url: str, page: int = 1) -> None:
+        self.record({"action": "navigate", "value": url}, page)
 
-    def record_download(self, filename: str) -> None:
-        self.record({"action": "download", "value": filename})
+    def record_download(self, filename: str, page: int = 1) -> None:
+        self.record({"action": "download", "value": filename}, page)
 
-
-def _wire_page(page: Page, sess: _Session) -> None:
-    """Hook up the events that only exist on the Python side."""
-    page.on("download", lambda d: sess.record_download(d.suggested_filename))
+    def record_popup(self, page: int, opener: int) -> None:
+        self.record({"action": "popup", "context": {"opener": opener}}, page)
 
 
 class WebRecorder:
@@ -159,9 +165,13 @@ class WebRecorder:
         self._browser: Any = None
         self._context: Any = None
         self._page: Any = None
+        # Every page seen so far with its number, in order of appearance
+        self._pages: list[tuple[Page, int]] = []
+        self._navigated: set[int] = set()
 
     @property
     def page(self) -> Any:
+        """The first page: where the recording starts."""
         if self._page is None:
             raise RecorderError("WebRecorder used outside its `with` block")
         return self._page
@@ -189,14 +199,17 @@ class WebRecorder:
         self._context = self._browser.new_context(accept_downloads=True)
 
         # The binding has to exist before the script that calls it.
-        self._context.expose_binding(BINDING, lambda _src, data: self.session.record(data))
+        self._context.expose_binding(
+            BINDING, lambda source, data: self.session.record(data, self._register(source["page"]))
+        )
         # add_init_script, not evaluate: it must survive every navigation and reach
-        # every frame.
+        # every frame of every page, including pages opened later.
         self._context.add_init_script(INJECTED_JS.read_text(encoding="utf-8"))
-        # Fires for every page, the first one included, so each is wired exactly once.
-        self._context.on("page", lambda pg: _wire_page(pg, self.session))
+        # Fires for every page, the first one included; _register wires each one once.
+        self._context.on("page", self._register)
 
         self._page = self._context.new_page()
+        self._register(self._page)
         return self
 
     def __exit__(
@@ -219,6 +232,41 @@ class WebRecorder:
             if self._pw is not None:
                 self._pw.stop()
         self._browser = self._context = self._page = self._pw = None
+        self._pages = []
+        self._navigated = set()
+
+    def _register(self, pg: Page) -> int:
+        """A page's number, given the first time it is seen. Wires the page up once."""
+        for known, number in self._pages:
+            if known == pg:
+                return number
+        number = len(self._pages) + 1
+        self._pages.append((pg, number))
+        pg.on("download", lambda d: self.session.record_download(d.suggested_filename, number))
+        if number > 1:
+            opener = pg.opener()
+            if opener is not None:
+                self.session.record_popup(number, self._register(opener))
+            else:
+                # opened by hand: no recorded step opened it, so its first URL counts
+                pg.on("framenavigated", lambda frame: self._first_navigation(frame, number))
+        return number
+
+    def _first_navigation(self, frame: Any, number: int) -> None:
+        """Where a tab opened by hand went first. Later navigations follow from clicks."""
+        if number in self._navigated or frame.parent_frame is not None:
+            return
+        if not frame.url or frame.url.startswith(_BLANK_SCHEMES):
+            return
+        self._navigated.add(number)
+        self.session.record_navigate(frame.url, number)
+
+    def _live_page(self) -> Page | None:
+        """The first page still open. Recording lasts as long as any tab does."""
+        for pg, _ in self._pages:
+            if not pg.is_closed():
+                return pg
+        return None
 
     def open(self, url: str) -> None:
         """Record the starting URL and go there."""
@@ -227,10 +275,18 @@ class WebRecorder:
 
     def pump(self, ms: int = _TICK_MS) -> None:
         """Let Playwright process messages, which is how queued events arrive."""
-        self.page.wait_for_timeout(ms)
+        live = self._live_page()
+        if live is None:
+            return
+        try:
+            live.wait_for_timeout(ms)
+        except Exception:
+            # the tab closed while we waited on it; the next pump picks another one
+            if not live.is_closed():
+                raise
 
     def is_open(self) -> bool:
-        return self._page is not None and not self._page.is_closed()
+        return self._live_page() is not None
 
 
 def record(
@@ -243,7 +299,7 @@ def record(
 ) -> Path:
     """Record a browser session and return the recording's folder.
 
-    Runs until the user presses Enter in the terminal or closes the browser.
+    Runs until the user presses Enter in the terminal or closes every tab.
     """
     parent = root or recordings_dir()
     slug = unique_slug(name or url, root=parent)

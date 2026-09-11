@@ -23,7 +23,7 @@ from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
-from ..ir import Action, Event, Selector, SelectorKind, Target, split_role
+from ..ir import Action, Event, Selector, SelectorKind, Target, page_of, split_role
 from ..session import Recording
 
 # Below this score the chosen selector is weak and the alternatives are worth showing.
@@ -42,6 +42,7 @@ _RESERVED = frozenset(
         "Page",
         "Path",
         "browser",
+        "context",
         "destination",
         "download",
         "download_dir",
@@ -53,6 +54,7 @@ _RESERVED = frozenset(
         "p",
         "page",
         "path",
+        "popup_info",
         "sync_playwright",
     }
 )
@@ -73,6 +75,11 @@ class GenOptions:
 def _lit(value: str) -> str:
     """A Python string literal, with non-ASCII intact and escapes correct."""
     return json.dumps(value, ensure_ascii=False)
+
+
+def _page_var(number: int) -> str:
+    """The variable holding a page: `page` for the first one, then `page_2`, ..."""
+    return "page" if number == 1 else f"page_{number}"
 
 
 def _locator_call(sel: Selector) -> str:
@@ -155,12 +162,12 @@ def _target_label(target: Target) -> str:
     return target.text_preview or target.tag or "target"
 
 
-_LocatorKey = tuple[str, SelectorKind, str]
+_LocatorKey = tuple[int, str, SelectorKind, str]
 
 
-def _locator_key(target: Target) -> _LocatorKey:
-    """A locator's identity: same frame, same chosen selector."""
-    return (target.frame_url, target.best.kind, target.best.value)
+def _locator_key(page: int, target: Target) -> _LocatorKey:
+    """A locator's identity: same page, same frame, same chosen selector."""
+    return (page, target.frame_url, target.best.kind, target.best.value)
 
 
 class _Emitter:
@@ -188,16 +195,20 @@ class _Generator:
         self.rec = rec
         self.opt = options
         self.events = list(rec.events)
-        self.frames: dict[str, str] = {}
+        self.frames: dict[tuple[int, str], str] = {}
         self.unsupported: list[str] = []
+        # Pages that already have a variable in the generated code
+        self.pages_open: set[int] = {1}
 
-        # Variable names already spent in the generated file
+        # Variable names already spent in the generated file. Page variables are spent
+        # up front, so no locator variable can take one.
         self.taken: set[str] = set(options.params.values())
+        self.taken.update(_page_var(page_of(e)) for e in self.events if page_of(e) > 1)
         # A locator used more than once becomes a variable instead of a repeated call
         self.locator_vars: dict[_LocatorKey, str] = {}
         self.commented: set[_LocatorKey] = set()
         self.locator_uses: Counter[_LocatorKey] = Counter(
-            _locator_key(e.target)
+            _locator_key(page_of(e), e.target)
             for e in self.events
             if e.target is not None and e.target.best.kind is not SelectorKind.COORDS
         )
@@ -233,26 +244,27 @@ class _Generator:
                 out[name] = ev.value or ""
         return out
 
-    def _base(self, target: Target, em: _Emitter, depth: int) -> str:
-        """What the locator starts from: `page`, or the frame the element lives in."""
+    def _base(self, target: Target, page: int, em: _Emitter, depth: int) -> str:
+        """What the locator starts from: the page, or the frame the element lives in."""
+        page_var = _page_var(page)
         if not target.frame_url:
-            return "page"
-        var = self.frames.get(target.frame_url)
+            return page_var
+        var = self.frames.get((page, target.frame_url))
         if var is None:
             var = f"frame_{len(self.frames) + 1}"
-            self.frames[target.frame_url] = var
-            em.line(f"{var} = page.frame(url={_lit(target.frame_url)})", depth)
+            self.frames[(page, target.frame_url)] = var
+            em.line(f"{var} = {page_var}.frame(url={_lit(target.frame_url)})", depth)
             em.line(f"if {var} is None:", depth)
             em.line(f'raise RuntimeError("frame not found: {target.frame_url}")', depth + 1)
         return var
 
-    def _locator(self, target: Target, em: _Emitter, depth: int) -> str:
+    def _locator(self, target: Target, page: int, em: _Emitter, depth: int) -> str:
         """The locator expression - or the variable name, if it is used more than once."""
-        key = _locator_key(target)
+        key = _locator_key(page, target)
         existing = self.locator_vars.get(key)
         if existing is not None:
             return existing
-        expr = f"{self._base(target, em, depth)}.{_locator_call(target.best)}"
+        expr = f"{self._base(target, page, em, depth)}.{_locator_call(target.best)}"
         if self.locator_uses[key] < 2:
             return expr
         var = _identifier(_target_label(target), self.taken)
@@ -272,19 +284,32 @@ class _Generator:
     # --- body -----------------------------------------------------------------
 
     def _emit_action(self, ev: Event, em: _Emitter, depth: int, nxt: Event | None) -> None:
+        page = page_of(ev)
+        page_var = _page_var(page)
+
+        if ev.action is Action.POPUP:
+            # normally opened already, by the step before it: see _emit_trigger
+            if page not in self.pages_open:
+                self._emit_orphan_popup(ev, em, depth)
+            return
+
+        if page not in self.pages_open:
+            # a tab opened by hand: no recorded step opened it
+            self.pages_open.add(page)
+            em.line(f"{page_var} = page.context.new_page()", depth)
+
         if ev.action is Action.NAVIGATE:
-            if ev.value == self.start_url:
-                em.line("page.goto(START_URL)", depth)
-            else:
-                em.line(f"page.goto({_lit(ev.value or '')})", depth)
+            url = "START_URL" if ev.value == self.start_url else _lit(ev.value or "")
+            em.line(f"{page_var}.goto({url})", depth)
             return
 
         if ev.action is Action.PRESS and ev.target is None:
-            em.line(f"page.keyboard.press({_lit(ev.value or 'Enter')})", depth)
+            pressed = _lit(ev.value or "Enter")
+            self._emit_trigger(f"{page_var}.keyboard.press({pressed})", page, em, depth, nxt)
             return
 
         if ev.action is Action.DOWNLOAD:
-            # emitted together with the click that triggers it, see _emit_click
+            # emitted together with the step that triggers it, see _emit_trigger
             return
 
         if ev.target is None:
@@ -294,29 +319,31 @@ class _Generator:
 
         if ev.target.best.kind is SelectorKind.COORDS:
             x, _, y = ev.target.best.value.partition(",")
-            em.line(f"page.mouse.click({x.strip()}, {y.strip()})", depth)
+            click = f"{page_var}.mouse.click({x.strip()}, {y.strip()})"
+            self._emit_trigger(click, page, em, depth, nxt)
             return
 
         # The fallback hint appears once per target, not on every action against it
-        key = _locator_key(ev.target)
+        key = _locator_key(page, ev.target)
         if key not in self.commented:
             self.commented.add(key)
             comment = _fallback_comment(ev.target, depth)
             if comment:
                 em.line(f"# {comment}", depth)
 
-        loc = self._locator(ev.target, em, depth)
+        loc = self._locator(ev.target, page, em, depth)
 
         if ev.action is Action.WAIT:
             em.line(f"expect({loc}).to_be_visible()", depth)
         elif ev.action is Action.CLICK:
-            self._emit_click(loc, em, depth, nxt)
+            self._emit_trigger(f"{loc}.click()", page, em, depth, nxt)
         elif ev.action is Action.FILL:
             if ev.is_secret:
                 em.line(f"# value comes from {ev.secret_ref}, it was never recorded", depth)
             em.line(f"{loc}.fill({self._value_expr(ev)})", depth)
         elif ev.action is Action.PRESS:
-            em.line(f"{loc}.press({_lit(ev.value or 'Enter')})", depth)
+            pressed = _lit(ev.value or "Enter")
+            self._emit_trigger(f"{loc}.press({pressed})", page, em, depth, nxt)
         elif ev.action is Action.SELECT:
             em.line(f"{loc}.select_option({self._value_expr(ev)})", depth)
         elif ev.action is Action.CHECK:
@@ -325,17 +352,38 @@ class _Generator:
             self.unsupported.append(f"{ev.action.value} (event {ev.id})")
             em.line(f"# step not supported by this generator: {ev.action.value}", depth)
 
-    def _emit_click(self, loc: str, em: _Emitter, depth: int, nxt: Event | None) -> None:
-        """A click that triggers a download has to be wrapped in the download wait."""
+    def _emit_trigger(
+        self, action: str, page: int, em: _Emitter, depth: int, nxt: Event | None
+    ) -> None:
+        """An action, wrapped in the wait for what the next event says it caused.
+
+        A download or a popup has to be expected before the step that causes it, or
+        replay races it.
+        """
+        page_var = _page_var(page)
         if nxt is not None and nxt.action is Action.DOWNLOAD:
-            em.line("with page.expect_download() as download_info:", depth)
-            em.line(f"{loc}.click()", depth + 1)
+            em.line(f"with {page_var}.expect_download() as download_info:", depth)
+            em.line(action, depth + 1)
             em.line("download = download_info.value", depth)
             em.line("destination = download_dir / download.suggested_filename", depth)
             em.line("download.save_as(destination)", depth)
             em.line("downloaded.append(destination)", depth)
+        elif nxt is not None and nxt.action is Action.POPUP and page_of(nxt) not in self.pages_open:
+            self.pages_open.add(page_of(nxt))
+            em.line(f"with {page_var}.expect_popup() as popup_info:", depth)
+            em.line(action, depth + 1)
+            em.line(f"{_page_var(page_of(nxt))} = popup_info.value", depth)
         else:
-            em.line(f"{loc}.click()", depth)
+            em.line(action, depth)
+
+    def _emit_orphan_popup(self, ev: Event, em: _Emitter, depth: int) -> None:
+        """A popup that no recorded step explains: wait for it, and say so."""
+        page = page_of(ev)
+        opener = _page_var(int(ev.context.get("opener", 1)))
+        self.pages_open.add(page)
+        self.unsupported.append(f"popup with no recorded step that opened it (event {ev.id})")
+        em.line("# a new page opened here, but not from a recorded step", depth)
+        em.line(f'{_page_var(page)} = {opener}.context.wait_for_event("page")', depth)
 
     # --- file -----------------------------------------------------------------
 
@@ -421,7 +469,9 @@ class _Generator:
         em.line("def main() -> None:")
         em.line("with sync_playwright() as p:", 1)
         em.line("browser = p.chromium.launch(headless=False)", 2)
-        em.line("page = browser.new_page()", 2)
+        # an explicit context: a page from browser.new_page() cannot open another tab
+        em.line("context = browser.new_context()", 2)
+        em.line("page = context.new_page()", 2)
         em.line("try:", 2)
         call = f"{self.opt.function_name}({', '.join(call_args)})"
         if self.has_downloads:

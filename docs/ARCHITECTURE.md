@@ -70,7 +70,11 @@ In `src/stepdub/ir.py`:
   guarantees the generator is deterministic no matter what order the recorder produced
   candidates in.
 - **`Event`** — one step: `id`, `ts`, `action`, `target`, `value`, `is_secret`,
-  `secret_ref`, `context`.
+  `secret_ref`, `context`. When a recording spans several tabs, `context["page"]` holds
+  the number of the page the step happened in, in order of appearance; no number means
+  the first page (`page_of()`, ADR-011). A tab opened from another one is an event of
+  its own, `POPUP`, so the generator can wrap the step that opened it in
+  `expect_popup()`.
 
 The project's central invariant lives in `Event.__post_init__`: **an event marked as a
 secret cannot carry a value.** Not a convention, not a code-review rule — an exception
@@ -136,8 +140,10 @@ paths.
   sharing a URL, will need a richer field in the IR — which is exactly what
   `SCHEMA_VERSION` is for.
 - Shadow DOM is not traversed.
-- `NAVIGATE` is only recorded for the initial URL. Navigations caused by clicks are a
-  consequence, not a step: recording them would generate code that undoes the click it
-  just made.
+- `NAVIGATE` is only recorded for a page's initial URL: the start URL, and the first URL
+  of a tab opened by hand. Navigations caused by clicks are a consequence, not a step:
+  recording them would generate code that undoes the click it just made.
+- Pages are identified by the order they appeared in. A site that opens its tabs in a
+  different order on replay will not line up with the recording.
 - `SUBMIT` exists in the IR but is neither emitted by the recorder nor supported by the
   generator. If one shows up, it comes out as a visible comment rather than wrong code.

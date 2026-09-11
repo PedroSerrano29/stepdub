@@ -7,7 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from stepdub.cli import _parse_params, _when, main
+from stepdub.cli import _parse_params, _summary, _when, main
+from stepdub.ir import Action, Event, Selector, SelectorKind, Target
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -156,6 +157,21 @@ class TestPurge:
     def test_deleting_a_missing_one_gives_a_readable_error(self, home, capsys):
         assert main(["purge", "does-not-exist"]) == 1
         assert "not found" in capsys.readouterr().err
+
+
+class TestSummary:
+    def test_a_step_on_a_later_page_names_the_page(self):
+        target = Target(candidates=(Selector(SelectorKind.ID, "note"),))
+        ev = Event(id=4, ts=0.0, action=Action.FILL, target=target, value="hi", context={"page": 2})
+        assert "[page 2] id=note" in _summary(ev)
+
+    def test_a_popup_says_which_page_opened_it(self):
+        ev = Event(id=3, ts=0.0, action=Action.POPUP, context={"page": 2, "opener": 1})
+        assert "opened from page 1" in _summary(ev)
+
+    def test_the_first_page_is_not_labelled(self):
+        ev = Event(id=1, ts=0.0, action=Action.PRESS, value="Enter")
+        assert "[page" not in _summary(ev)
 
 
 class TestWhen:

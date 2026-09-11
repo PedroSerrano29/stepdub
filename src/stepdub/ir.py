@@ -60,6 +60,8 @@ class Action(StrEnum):
     SUBMIT = "submit"
     DOWNLOAD = "download"
     WAIT = "wait"
+    # A page opened by another one; context["opener"] is the number of that page
+    POPUP = "popup"
 
 
 # Actions that make no sense without an on-screen target.
@@ -82,6 +84,11 @@ def split_role(value: str) -> tuple[str, str]:
     """Split a ROLE selector value into (role, accessible name)."""
     role, _, name = value.partition(ROLE_SEP)
     return role, name
+
+
+def page_of(event: Event) -> int:
+    """The page an event happened in. Pages are numbered as they appear, from 1."""
+    return int(event.context.get("page", 1))
 
 
 @dataclass(frozen=True, slots=True)

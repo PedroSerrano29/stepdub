@@ -207,3 +207,29 @@ refuses to publish if the tag and the package version disagree.
 laptop: every release is a tag and a wait for CI. For a tool that asks strangers to
 trust it with their keyboard, a release process that cannot leak the author's files is
 worth the wait.
+
+---
+
+## ADR-011 — Pages are numbered, and a popup is an event of its own
+
+**Context.** The first recorder wrote every tab into one stream, and the generator
+wrote every step against a single `page`. Work done in a tab opened from a link was
+recorded, then replayed against the wrong tab. The recording loop also stopped when the
+first tab closed, even with the work still going on in another one.
+
+**Alternatives.** (a) Record the first tab only. (b) Store each event's page URL and
+find the page by URL at replay time. (c) Number pages in the order they appear, carry
+the number on every event, and record the opening of a popup as its own event.
+
+**Choice.** (c). The number lives in the event's `context` as `page`, and its absence
+means the first page, so a single-tab recording is byte for byte what it was before. A
+popup is `Action.POPUP`, carrying the number of the page that opened it; the generator
+wraps the step before it in `expect_popup()`, which is how Playwright replays a popup
+without racing it. A tab opened by hand has no opener: its first navigation is recorded,
+and the generated code opens a new page for it.
+
+**Trade-off accepted.** (b) would survive tabs opening in a different order on replay,
+but URLs change between runs (session ids, query strings) and every event would depend
+on one. A new `Action` value also means a recording made with it cannot be read by an
+older stepdub. That is acceptable only because no version had been released yet: it
+ships in 0.1.0.

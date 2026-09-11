@@ -11,6 +11,7 @@ from stepdub.ir import (
     Selector,
     SelectorKind,
     Target,
+    page_of,
     split_role,
 )
 
@@ -165,3 +166,16 @@ class TestEvent:
 def test_split_role():
     assert split_role("button|Sign in") == ("button", "Sign in")
     assert split_role("searchbox") == ("searchbox", "")
+
+
+class TestPages:
+    def test_an_event_with_no_page_number_belongs_to_the_first_page(self):
+        assert page_of(Event(id=1, ts=0.0, action=Action.PRESS, value="Enter")) == 1
+
+    def test_the_page_number_comes_from_the_context(self):
+        ev = Event(id=1, ts=0.0, action=Action.POPUP, context={"page": 2, "opener": 1})
+        assert page_of(ev) == 2
+
+    def test_a_popup_needs_no_target_and_survives_a_roundtrip(self):
+        ev = Event(id=3, ts=1.0, action=Action.POPUP, context={"page": 2, "opener": 1})
+        assert Event.from_dict(ev.to_dict()) == ev

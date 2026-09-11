@@ -193,3 +193,87 @@ class TestGracefulDegradation:
         target = Target(candidates=(Selector(SelectorKind.COORDS, "847,312"),))
         code = gen(one_event_recording(Event(id=1, ts=0.0, action=Action.CLICK, target=target)))
         assert "page.mouse.click(847, 312)" in code
+
+
+def popup(id_: int, ts: float) -> Event:
+    """Page 2 opening from page 1."""
+    return Event(id=id_, ts=ts, action=Action.POPUP, context={"page": 2, "opener": 1})
+
+
+class TestPages:
+    def report_recording(self) -> Recording:
+        link = Target(candidates=(Selector(SelectorKind.ROLE, "link|Open report"),))
+        note = Target(candidates=(Selector(SelectorKind.ID, "note"),))
+        return one_event_recording(
+            Event(id=1, ts=0.0, action=Action.NAVIGATE, value="https://example.com"),
+            Event(id=2, ts=1.0, action=Action.CLICK, target=link),
+            popup(3, 1.1),
+            Event(id=4, ts=2.0, action=Action.FILL, target=note, value="hi", context={"page": 2}),
+        )
+
+    def test_the_click_that_opens_a_popup_is_wrapped_in_expect_popup(self):
+        assert (
+            "    with page.expect_popup() as popup_info:\n"
+            '        page.get_by_role("link", name="Open report").click()\n'
+            "    page_2 = popup_info.value\n"
+        ) in gen(self.report_recording())
+
+    def test_steps_in_the_popup_run_against_the_popup(self):
+        code = gen(self.report_recording())
+        assert 'page_2.locator("#note").fill("hi")' in code
+        assert 'page.locator("#note")' not in code
+
+    def test_a_single_page_recording_mentions_no_other_page(self, recording):
+        code = gen(recording, params=PARAMS)
+        assert "page_2" not in code
+        assert "popup" not in code
+
+    def test_the_same_selector_on_two_pages_is_two_locators(self):
+        note = Target(candidates=(Selector(SelectorKind.ID, "note"),))
+        opener = Target(candidates=(Selector(SelectorKind.ID, "open"),))
+        rec = one_event_recording(
+            Event(id=1, ts=0.0, action=Action.FILL, target=note, value="a"),
+            Event(id=2, ts=0.5, action=Action.CLICK, target=opener),
+            popup(3, 0.6),
+            Event(id=4, ts=1.0, action=Action.FILL, target=note, value="b", context={"page": 2}),
+        )
+        code = gen(rec)
+        assert 'page.locator("#note").fill("a")' in code
+        assert 'page_2.locator("#note").fill("b")' in code
+
+    def test_a_locator_variable_never_takes_a_page_name(self):
+        """A button labelled "page" in a two-page recording must not become `page_2`."""
+        target = Target(candidates=(Selector(SelectorKind.TEXT, "page"),))
+        rec = one_event_recording(
+            Event(id=1, ts=0.0, action=Action.WAIT, target=target),
+            Event(id=2, ts=0.5, action=Action.CLICK, target=target),
+            popup(3, 0.6),
+        )
+        code = gen(rec)
+        assert "page_3 = page.get_by_text" in code
+        assert "page_2 = popup_info.value" in code
+
+    def test_a_tab_opened_by_hand_becomes_a_new_page(self):
+        rec = one_event_recording(
+            Event(id=1, ts=0.0, action=Action.NAVIGATE, value="https://example.com"),
+            Event(
+                id=2,
+                ts=1.0,
+                action=Action.NAVIGATE,
+                value="https://example.org",
+                context={"page": 2},
+            ),
+        )
+        code = gen(rec)
+        assert "page_2 = page.context.new_page()" in code
+        assert 'page_2.goto("https://example.org")' in code
+
+    def test_a_popup_no_recorded_step_opened_is_flagged_not_hidden(self):
+        rec = one_event_recording(
+            Event(id=1, ts=0.0, action=Action.NAVIGATE, value="https://example.com"),
+            popup(2, 1.0),
+        )
+        code = gen(rec)
+        assert "not from a recorded step" in code
+        assert 'page_2 = page.context.wait_for_event("page")' in code
+        ast.parse(code)

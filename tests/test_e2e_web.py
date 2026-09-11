@@ -18,9 +18,11 @@ import pytest
 
 pytest.importorskip("playwright", reason="needs: pip install playwright && playwright install")
 
+from playwright.sync_api import expect, sync_playwright
+
 from stepdub import session
 from stepdub.codegen import GenOptions, generate
-from stepdub.ir import Action, SelectorKind
+from stepdub.ir import Action, SelectorKind, page_of
 from stepdub.recorders.web import WebRecorder
 from stepdub.session import Recording, RecordingMeta, RecordingWriter
 from stepdub.transforms import run_pipeline
@@ -211,3 +213,122 @@ class TestLifecycle:
             with pytest.raises(RecorderError, match="unknown browser"):
                 with WebRecorder(w, browser="netscape", headless=True):
                     pass
+
+
+TABS = (Path(__file__).parent / "pages" / "tabs.html").resolve().as_uri()
+REPORT = (Path(__file__).parent / "pages" / "report.html").resolve().as_uri()
+
+
+@pytest.fixture(scope="module")
+def tabs(tmp_path_factory) -> dict[str, object]:
+    """Open a report in a new tab, close the first tab, and finish the work in the report."""
+    root = tmp_path_factory.mktemp("tabs")
+    meta = RecordingMeta.new("tabs", "tabs", start_url=TABS)
+
+    with RecordingWriter(meta, root=root) as writer, WebRecorder(writer, headless=True) as rec:
+        rec.open(TABS)
+        with rec.page.expect_popup() as info:
+            rec.page.get_by_text("Open report").click()
+        report = info.value
+        report.get_by_label("Note").fill("hello")
+        banner = report.locator("#__stepdub_banner").count()
+
+        rec.page.close()
+        still_recording = rec.is_open()
+        rec.pump(200)
+        report.get_by_role("button", name="Save").click()
+        rec.pump(400)
+
+    return {
+        "recording": session.load("tabs", root=root),
+        "banner": banner,
+        "still_recording": still_recording,
+    }
+
+
+class TestTabs:
+    def test_recording_survives_closing_the_first_tab(self, tabs):
+        assert tabs["still_recording"] is True
+
+    def test_the_new_tab_shows_the_recording_indicator(self, tabs):
+        """No silent mode in a second tab either."""
+        assert tabs["banner"] == 1
+
+    def test_every_step_is_recorded_on_the_page_it_happened_in(self, tabs):
+        steps = [(e.action, page_of(e)) for e in tabs["recording"].events]
+        assert steps == [
+            (Action.NAVIGATE, 1),
+            (Action.CLICK, 1),
+            (Action.POPUP, 2),
+            (Action.FILL, 2),
+            (Action.CLICK, 2),
+        ]
+
+    def test_the_popup_knows_which_page_opened_it(self, tabs):
+        popup = next(e for e in tabs["recording"].events if e.action is Action.POPUP)
+        assert popup.context["opener"] == 1
+
+
+@pytest.fixture(scope="module")
+def manual_tab(tmp_path_factory) -> Recording:
+    """A second tab opened the way Ctrl+T opens one: no page opened it."""
+    root = tmp_path_factory.mktemp("manual")
+    meta = RecordingMeta.new("manual", "manual", start_url=TABS)
+
+    with RecordingWriter(meta, root=root) as writer, WebRecorder(writer, headless=True) as rec:
+        rec.open(TABS)
+        second = rec.page.context.new_page()
+        second.goto(REPORT)
+        second.get_by_label("Note").fill("by hand")
+        rec.pump(400)
+
+    return session.load("manual", root=root)
+
+
+class TestTabOpenedByHand:
+    def test_its_first_navigation_is_recorded_on_its_own_page(self, manual_tab):
+        steps = [(e.action, page_of(e), e.value) for e in manual_tab.events]
+        assert steps == [
+            (Action.NAVIGATE, 1, TABS),
+            (Action.NAVIGATE, 2, REPORT),
+            (Action.FILL, 2, "by hand"),
+        ]
+
+
+def generated(rec: Recording) -> dict[str, object]:
+    """Generate the code for a recording and load it the way a module is loaded."""
+    code = generate(replace(rec, events=run_pipeline(rec.events)), GenOptions(include_main=False))
+    namespace: dict[str, object] = {}
+    exec(compile(code, "generated.py", "exec"), namespace)
+    return namespace
+
+
+@pytest.fixture
+def fresh_page():
+    """A page set up the way the generated main() sets one up."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        yield browser.new_context().new_page()
+        browser.close()
+
+
+class TestTheGeneratedCodeRuns:
+    """The strongest check there is: run what stepdub wrote against the same pages."""
+
+    def test_the_login_recording_signs_in_and_downloads_the_file(
+        self, recorded, fresh_page, tmp_path, monkeypatch
+    ):
+        monkeypatch.setenv("STEPDUB_PASSWORD", PASSWORD)
+        paths = generated(recorded)["run"](fresh_page, download_dir=tmp_path)
+        assert [p.name for p in paths] == ["results.csv"]
+        assert "AA-01-BB" in paths[0].read_text(encoding="utf-8")
+
+    def test_the_tabs_recording_finishes_the_work_in_the_second_tab(self, tabs, fresh_page):
+        generated(tabs["recording"])["run"](fresh_page)
+        report = fresh_page.context.pages[-1]
+        expect(report.locator("#status")).to_have_text("Saved: hello")
+
+    def test_a_tab_opened_by_hand_is_opened_again_on_replay(self, manual_tab, fresh_page):
+        generated(manual_tab)["run"](fresh_page)
+        second = fresh_page.context.pages[-1]
+        expect(second.locator("#note")).to_have_value("by hand")

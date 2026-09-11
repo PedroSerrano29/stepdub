@@ -61,9 +61,5 @@ and each one should be usable by someone who never reads this file.
 
 Unresolved items from ongoing review. Each with a date and a `file:line` pointer.
 
-- [ ] 2026-09-10 — `src/stepdub/recorders/web.py:188` the recording loop only watches the
-      first page. If the user closes that tab but keeps working in a second one opened
-      from it, the loop stops while the context is still alive. Needs to track the
-      context rather than one page.
 - [ ] 2026-09-10 — no recorder covers `contenteditable` beyond a plain `fill`; rich text
       editors will produce partial recordings.

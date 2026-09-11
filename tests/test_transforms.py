@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from stepdub import session
-from stepdub.ir import Action, Event, Selector, SelectorKind, Target
+from stepdub.ir import Action, Event, Selector, SelectorKind, Target, page_of
 from stepdub.transforms import (
     DEFAULT_PIPELINE,
     coalesce_typing,
@@ -148,6 +148,35 @@ class TestInsertWaits:
             Action.WAIT,
             Action.CLICK,
         ]
+
+
+class TestPages:
+    """The same selector on two pages is two different elements."""
+
+    def test_typing_in_the_same_field_on_two_pages_is_not_merged(self):
+        f = field("Note")
+        given = [
+            ev(1, 1.0, Action.FILL, f, "a"),
+            ev(2, 1.1, Action.FILL, f, "b", context={"page": 2}),
+        ]
+        assert len(coalesce_typing(given)) == 2
+
+    def test_a_click_on_one_page_is_not_a_focus_click_for_another(self):
+        f = field("Note")
+        given = [
+            ev(1, 1.0, Action.CLICK, f),
+            ev(2, 1.2, Action.FILL, f, "x", context={"page": 2}),
+        ]
+        assert len(drop_focus_clicks(given)) == 2
+
+    def test_a_wait_after_a_popup_belongs_to_the_popup(self):
+        given = [
+            ev(1, 0.0, Action.POPUP, context={"page": 2, "opener": 1}),
+            ev(2, 5.0, Action.FILL, field("Note"), "x", context={"page": 2}),
+        ]
+        out = insert_waits(given)
+        assert [e.action for e in out] == [Action.POPUP, Action.WAIT, Action.FILL]
+        assert page_of(out[1]) == 2
 
 
 class TestNormalizeSecretRefs:

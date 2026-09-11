@@ -16,8 +16,9 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import replace
+from typing import Any
 
-from ..ir import Action, Event
+from ..ir import Action, Event, page_of
 
 # A click followed by typing in the same field within this window is just the cursor.
 FOCUS_CLICK_GAP = 1.5
@@ -26,9 +27,10 @@ FOCUS_CLICK_GAP = 1.5
 WAIT_THRESHOLD = 2.0
 
 # Actions after which the page usually changes, so waiting is worth it.
-# PRESS counts: Enter inside a search box submits the form.
+# PRESS counts: Enter inside a search box submits the form. So does POPUP: the new page
+# is still loading.
 _CAUSES_PAGE_CHANGE = frozenset(
-    {Action.NAVIGATE, Action.CLICK, Action.PRESS, Action.SUBMIT, Action.DOWNLOAD}
+    {Action.NAVIGATE, Action.CLICK, Action.PRESS, Action.SUBMIT, Action.DOWNLOAD, Action.POPUP}
 )
 
 _TYPING_ACTIONS = frozenset({Action.FILL, Action.SELECT, Action.CHECK})
@@ -40,7 +42,7 @@ def _same_target(a: Event, b: Event) -> bool:
     """Same element, for the purposes of noise removal."""
     if a.target is None or b.target is None:
         return False
-    if a.target.frame_url != b.target.frame_url:
+    if page_of(a) != page_of(b) or a.target.frame_url != b.target.frame_url:
         return False
     return (a.target.best.kind, a.target.best.value) == (b.target.best.kind, b.target.best.value)
 
@@ -111,6 +113,9 @@ def insert_waits(events: Sequence[Event], threshold: float = WAIT_THRESHOLD) -> 
             and prev.action in _CAUSES_PAGE_CHANGE
             and ev.ts - prev.ts > threshold
         ):
+            context: dict[str, Any] = {"reason": "long pause while recording"}
+            if page_of(ev) > 1:
+                context["page"] = page_of(ev)  # the wait belongs to the element's page
             out.append(
                 Event(
                     id=0,
@@ -118,7 +123,7 @@ def insert_waits(events: Sequence[Event], threshold: float = WAIT_THRESHOLD) -> 
                     action=Action.WAIT,
                     layer=ev.layer,
                     target=ev.target,
-                    context={"reason": "long pause while recording"},
+                    context=context,
                 )
             )
         out.append(ev)

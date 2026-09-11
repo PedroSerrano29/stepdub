@@ -50,7 +50,8 @@ def run(page: Page, *, term: str, download_dir: Path = Path("downloads")) -> lis
 def main() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
-        page = browser.new_page()
+        context = browser.new_context()
+        page = context.new_page()
         try:
             for path in run(page, term="café tables"):
                 print(path)

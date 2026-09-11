@@ -26,8 +26,11 @@ ADR-009 in `docs/DECISIONS.md`.
   `insert_waits`, `normalize_secret_refs`, `renumber`.
 - Deterministic Playwright/Python code generator with parameterisation, download
   handling, iframe resolution and graceful degradation for unsupported steps.
-- Web recorder: JS injected into every frame, Playwright binding, download and new-tab
-  handling, visible recording indicator.
+- Web recorder: JS injected into every frame, Playwright binding, download handling,
+  visible recording indicator.
+- Work across tabs: pages are numbered as they appear, a tab opened from the page is
+  recorded as a popup and replayed with `expect_popup()`, and a tab opened by hand
+  becomes a new page. Recording continues while any tab is open, not only the first.
 - CLI: `record`, `list`, `show`, `gen`, `purge`, `where`.
 - End-to-end test suite driving a real browser against a local page, verifying selector
   quality, the recording indicator, and that a typed password reaches neither the

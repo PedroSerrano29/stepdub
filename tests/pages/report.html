@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>stepdub report page</title>
+  </head>
+  <body>
+    <!-- The page tabs.html opens in a new tab. -->
+    <h1>Report</h1>
+    <label for="note">Note</label>
+    <input id="note" type="text" />
+    <button id="save" type="button" onclick="save()">Save</button>
+    <p id="status"></p>
+    <script>
+      function save() {
+        const note = document.getElementById("note").value;
+        document.getElementById("status").textContent = "Saved: " + note;
+      }
+    </script>
+  </body>
+</html>
