@@ -193,10 +193,10 @@ class WebRecorder:
         # add_init_script, not evaluate: it must survive every navigation and reach
         # every frame.
         self._context.add_init_script(INJECTED_JS.read_text(encoding="utf-8"))
+        # Fires for every page, the first one included, so each is wired exactly once.
         self._context.on("page", lambda pg: _wire_page(pg, self.session))
 
         self._page = self._context.new_page()
-        _wire_page(self._page, self.session)
         return self
 
     def __exit__(

@@ -76,6 +76,10 @@ class TestTheRecordingHappened:
         assert Action.DOWNLOAD in actions
         assert Action.CHECK in actions
 
+    def test_the_download_is_recorded_once(self, recorded):
+        """The context's page event fires for the first page too; wiring it twice doubled this."""
+        assert [e.action for e in recorded.events].count(Action.DOWNLOAD) == 1
+
     def test_no_warnings_were_produced(self, recorded):
         """A warning here means the injected JS sent something the IR refused."""
         assert all(e.action is not Action.SUBMIT for e in recorded.events)
