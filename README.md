@@ -83,7 +83,7 @@ parameters) → `gen`.
 ## Secrets and privacy
 
 A tool that records what you do on your computer owes you a straight answer about
-this, so it all lives in [docs/PRIVACY.md](docs/PRIVACY.md). The short version:
+this, so it all lives in [docs/PRIVACY.md](https://github.com/PedroSerrano29/stepdub/blob/main/docs/PRIVACY.md). The short version:
 
 - **Zero network.** stepdub sends nothing anywhere. No telemetry, no "anonymous stats",
   no automatic crash reports.
@@ -91,7 +91,7 @@ this, so it all lives in [docs/PRIVACY.md](docs/PRIVACY.md). The short version:
   not in a filter downstream — the value never enters the process.
 - **Everything is local**, under `~/.stepdub`, and `stepdub purge --all` removes it.
 - **While recording, a visible indicator sits on the page.** There is no silent mode
-  and no autostart, and there will not be — see [docs/DECISIONS.md](docs/DECISIONS.md).
+  and no autostart, and there will not be — see [docs/DECISIONS.md](https://github.com/PedroSerrano29/stepdub/blob/main/docs/DECISIONS.md).
 
 ## How this differs from what already exists
 
@@ -115,7 +115,7 @@ and desktop steps.
 ## What it does not do yet
 
 It is v0.1, so: web layer only, only tested on Windows, no GUI, no shadow DOM support,
-and frames are resolved by URL. The [roadmap](docs/ROADMAP.md) has the planned order.
+and frames are resolved by URL. The [roadmap](https://github.com/PedroSerrano29/stepdub/blob/main/docs/ROADMAP.md) has the planned order.
 
 ## How it works inside
 
@@ -125,7 +125,7 @@ RECORDERS ──▶ EVENT LOG (IR) ──▶ TRANSFORMS ──▶ CODEGEN
 ```
 
 The detail, and why code is never generated straight from captured events, is in
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+[docs/ARCHITECTURE.md](https://github.com/PedroSerrano29/stepdub/blob/main/docs/ARCHITECTURE.md).
 
 ## Development
 

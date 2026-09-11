@@ -1,41 +1,67 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
 name = "stepdub"
-version = "0.1.0"
-description = "Grava o que fazes no computador e devolve Python legivel que o repete"
+dynamic = ["version"]
+description = "Record what you do on your computer and get readable Python that does it again"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Pedro Serrano" }]
 requires-python = ">=3.11"
 keywords = ["automation", "macro", "recorder", "rpa", "playwright", "codegen"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Code Generators",
     "Topic :: Software Development :: Testing",
 ]
 dependencies = []
 
 [project.optional-dependencies]
-# O nucleo (ir, transforms, codegen) nao depende de nada.
-# O Playwright so e preciso para GRAVAR e para CORRER o codigo gerado.
+# The core (ir, transforms, codegen) depends on nothing.
+# Playwright is only needed to RECORD and to RUN the generated code.
 web = ["playwright>=1.40"]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
 
+[project.urls]
+Homepage = "https://github.com/PedroSerrano29/stepdub"
+Changelog = "https://github.com/PedroSerrano29/stepdub/blob/main/CHANGELOG.md"
+Issues = "https://github.com/PedroSerrano29/stepdub/issues"
+Privacy = "https://github.com/PedroSerrano29/stepdub/blob/main/docs/PRIVACY.md"
+
 [project.scripts]
 stepdub = "stepdub.cli:main"
+
+[tool.hatch.version]
+path = "src/stepdub/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/stepdub"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "src/stepdub/recorders/injected.js" = "stepdub/recorders/injected.js"
+
+[tool.hatch.build.targets.sdist]
+# An allowlist on purpose: files ignored only through .git/info/exclude are not in
+# .gitignore, so without it they would ship in a locally built sdist.
+include = [
+    "src/",
+    "tests/",
+    "docs/ARCHITECTURE.md",
+    "docs/DECISIONS.md",
+    "docs/PRIVACY.md",
+    "docs/ROADMAP.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -59,5 +85,5 @@ python_version = "3.11"
 files = ["src/stepdub"]
 strict = true
 warn_unreachable = true
-# O Playwright so entra no extra "web"; sem ele instalado, nao falhar o type-check.
+# Playwright only comes with the "web" extra; the type check must pass without it.
 ignore_missing_imports = true
