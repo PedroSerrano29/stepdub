@@ -1,5 +1,7 @@
 # stepdub
 
+[![CI](https://github.com/PedroSerrano29/stepdub/actions/workflows/ci.yml/badge.svg)](https://github.com/PedroSerrano29/stepdub/actions/workflows/ci.yml)
+
 Record what you do on your computer and get **readable Python that does it again**.
 
 It is the idea behind Excel's macro recorder — hit record, do the work, walk away with

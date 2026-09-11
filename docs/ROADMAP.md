@@ -15,7 +15,9 @@ and each one should be usable by someone who never reads this file.
 - [x] Test suite that runs with no browser installed
 - [x] End-to-end verification of the recorder against a real browser, driven from a
       local test page (`tests/pages/login.html`), skipped when Playwright is absent
-- [ ] CI green on GitHub Actions
+- [x] CI green on GitHub Actions: 6 jobs (Ubuntu and Windows, Python 3.11-3.13). The
+      browser end-to-end tests are skipped there by design, since CI never installs
+      Playwright, so a green badge says nothing about the recorder in a real browser
 - [ ] Published on PyPI (name `stepdub` not yet claimed)
 
 ## v0.2 — Parameters and ergonomics
