@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>stepdub editor test page</title>
+  </head>
+  <body>
+    <!-- A rich-text style editor: typing goes into a contenteditable element, not an
+         input, the way comment boxes and web mail composers work. -->
+    <h1>Comment</h1>
+    <div id="editor" contenteditable="true" role="textbox" aria-label="Comment"></div>
+    <button id="post" type="button" onclick="post()">Post</button>
+    <p id="posted"></p>
+    <script>
+      function post() {
+        const text = document.getElementById("editor").innerText;
+        document.getElementById("posted").textContent = text;
+      }
+    </script>
+  </body>
+</html>

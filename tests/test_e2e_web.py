@@ -217,6 +217,12 @@ class TestLifecycle:
 
 TABS = (Path(__file__).parent / "pages" / "tabs.html").resolve().as_uri()
 REPORT = (Path(__file__).parent / "pages" / "report.html").resolve().as_uri()
+EDITOR = (Path(__file__).parent / "pages" / "editor.html").resolve().as_uri()
+
+# Longer than the 80 characters a text preview is capped at, on purpose.
+COMMENT = (
+    "Looks good to me, and the numbers on page two match the export we ran last week. Ship it."
+)
 
 
 @pytest.fixture(scope="module")
@@ -295,6 +301,34 @@ class TestTabOpenedByHand:
         ]
 
 
+@pytest.fixture(scope="module")
+def editor(tmp_path_factory) -> Recording:
+    """Type into a contenteditable element key by key, the way a person does, then post."""
+    root = tmp_path_factory.mktemp("editor")
+    meta = RecordingMeta.new("editor", "editor", start_url=EDITOR)
+
+    with RecordingWriter(meta, root=root) as writer, WebRecorder(writer, headless=True) as rec:
+        rec.open(EDITOR)
+        box = rec.page.get_by_role("textbox", name="Comment")
+        box.click()
+        box.press_sequentially(COMMENT)
+        rec.page.get_by_role("button", name="Post").click()
+        rec.pump(400)
+
+    return session.load("editor", root=root)
+
+
+class TestContentEditable:
+    def test_typing_becomes_one_fill_with_the_whole_text(self, editor):
+        fills = [e for e in run_pipeline(editor.events) if e.action is Action.FILL]
+        assert [e.value for e in fills] == [COMMENT]
+
+    def test_the_editor_gets_the_same_robust_selectors_as_an_input(self, editor):
+        fill = next(e for e in editor.events if e.action is Action.FILL)
+        assert fill.target.best.kind is SelectorKind.ID
+        assert "textbox|Comment" in [c.value for c in fill.target.candidates]
+
+
 def generated(rec: Recording) -> dict[str, object]:
     """Generate the code for a recording and load it the way a module is loaded."""
     code = generate(replace(rec, events=run_pipeline(rec.events)), GenOptions(include_main=False))
@@ -332,3 +366,7 @@ class TestTheGeneratedCodeRuns:
         generated(manual_tab)["run"](fresh_page)
         second = fresh_page.context.pages[-1]
         expect(second.locator("#note")).to_have_value("by hand")
+
+    def test_text_typed_into_an_editor_is_typed_again_in_full(self, editor, fresh_page):
+        generated(editor)["run"](fresh_page)
+        expect(fresh_page.locator("#posted")).to_have_text(COMMENT)

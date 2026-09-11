@@ -115,7 +115,8 @@ and desktop steps.
 ## What it does not do yet
 
 It is v0.1, so: web layer only, only tested on Windows, no GUI, no shadow DOM support,
-and frames are resolved by URL. The [roadmap](https://github.com/PedroSerrano29/stepdub/blob/main/docs/ROADMAP.md) has the planned order.
+frames are resolved by URL, and in a rich-text editor the text is recorded but its
+formatting (bold, lists, links) is not. The [roadmap](https://github.com/PedroSerrano29/stepdub/blob/main/docs/ROADMAP.md) has the planned order.
 
 ## How it works inside
 

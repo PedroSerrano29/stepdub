@@ -61,5 +61,7 @@ and each one should be usable by someone who never reads this file.
 
 Unresolved items from ongoing review. Each with a date and a `file:line` pointer.
 
-- [ ] 2026-09-10 — no recorder covers `contenteditable` beyond a plain `fill`; rich text
-      editors will produce partial recordings.
+- [ ] 2026-09-11 — `src/stepdub/codegen/playwright_py.py:343` a long recorded value (a
+      comment, a URL) is emitted as one string literal, so a generated line can pass 100
+      characters and fail a strict linter. Long values could move into named constants
+      at the top of the generated file.

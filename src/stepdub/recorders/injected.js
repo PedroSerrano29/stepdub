@@ -264,7 +264,8 @@
       emit({
         action: "fill",
         target: targetOf(el),
-        value: el.isContentEditable ? trim(el.innerText) : el.value,
+        // the whole text: trim() caps at 80 characters and is only meant for previews
+        value: el.isContentEditable ? el.innerText : el.value,
         context: { url: location.href },
       });
     },
