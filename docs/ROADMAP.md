@@ -65,13 +65,5 @@ Unresolved items from ongoing review. Each with a date and a `file:line` pointer
       first page. If the user closes that tab but keeps working in a second one opened
       from it, the loop stops while the context is still alive. Needs to track the
       context rather than one page.
-- [ ] 2026-09-10 — `src/stepdub/recorders/injected.js:200` `uniqueText` runs a full
-      `querySelectorAll` on every click. Fine for normal pages, potentially slow on very
-      large DOMs. Measure before optimising.
 - [ ] 2026-09-10 — no recorder covers `contenteditable` beyond a plain `fill`; rich text
       editors will produce partial recordings.
-- [ ] 2026-09-10 — running `tests/test_e2e_web.py` leaves a `Task was destroyed but it
-      is pending` message on stderr after the suite passes. It comes from Playwright's
-      own connection teardown when `start()`/`stop()` runs several times in one
-      process, not from stepdub. Cosmetic, but it looks like a failure to a newcomer:
-      either find the right teardown order or run the e2e file in its own process.

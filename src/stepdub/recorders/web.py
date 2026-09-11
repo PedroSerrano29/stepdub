@@ -36,6 +36,8 @@ INJECTED_JS = Path(__file__).with_name("injected.js")
 
 BINDING = "__stepdub_emit"
 
+BROWSERS = ("chromium", "firefox", "webkit")
+
 # How often to pump Playwright's event loop while recording.
 _TICK_MS = 200
 
@@ -173,12 +175,15 @@ class WebRecorder:
         return self.session.warnings
 
     def __enter__(self) -> WebRecorder:
+        # Checked before Playwright starts: stopping it right after a start leaves a
+        # pending task that complains on stderr.
+        if self.browser_name not in BROWSERS:
+            raise RecorderError(
+                f"unknown browser: {self.browser_name} (choose from {', '.join(BROWSERS)})"
+            )
         sync_playwright = _load_playwright()
         self._pw = sync_playwright().start()
-        engine = getattr(self._pw, self.browser_name, None)
-        if engine is None:
-            self._shutdown()
-            raise RecorderError(f"unknown browser: {self.browser_name}")
+        engine = getattr(self._pw, self.browser_name)
 
         self._browser = engine.launch(headless=self.headless)
         self._context = self._browser.new_context(accept_downloads=True)

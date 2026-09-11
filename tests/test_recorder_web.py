@@ -44,6 +44,20 @@ class TestNoBrowserNeeded:
         with pytest.raises(ImportError):
             web._load_playwright()
 
+    def test_an_unknown_browser_is_refused_before_playwright_starts(self, monkeypatch, tmp_path):
+        """Starting Playwright and stopping it straight away leaves noise on stderr."""
+
+        def must_not_start() -> None:
+            raise AssertionError("Playwright was started for a browser that does not exist")
+
+        monkeypatch.setattr(web, "_load_playwright", must_not_start)
+        with (
+            RecordingWriter(RecordingMeta.new("x", "x"), root=tmp_path) as w,
+            pytest.raises(web.RecorderError, match="unknown browser: netscape"),
+            web.WebRecorder(w, browser="netscape"),
+        ):
+            pass
+
 
 class TestInjectedAsset:
     def test_the_javascript_ships_with_the_package(self):
