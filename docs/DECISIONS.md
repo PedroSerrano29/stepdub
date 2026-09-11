@@ -181,3 +181,29 @@ platform this project does not support.
 the `STEPDUB_` environment variable prefix, `~/.stepdub`, the injected JavaScript's
 globals and every document, in one commit. Once users have recordings on disk and
 generated scripts reading `ENCORE_PASSWORD`, the same change becomes a migration.
+
+---
+
+## ADR-010 — Releases are built and published by CI, never from a laptop
+
+**Context.** The first source distribution built on the author's machine contained a
+private local notes file. It was ignored through `.git/info/exclude`, which git honours
+and the build backend does not read, so it never appeared in `git status` and still
+went into the archive. A PyPI upload cannot be taken back: a version can be yanked, but
+the file is mirrored within minutes and its name can never be reused.
+
+**Alternatives.** (a) Build locally, upload with an API token, and inspect every sdist
+by hand. (b) Add an explicit sdist allowlist and keep uploading locally. (c) The
+allowlist, plus building and publishing from GitHub Actions through PyPI Trusted
+Publishing.
+
+**Choice.** (c). The allowlist fixes this file; building in CI fixes the whole class,
+because a file that was never committed does not exist on the runner. Trusted Publishing
+means there is no long-lived API token anywhere to leak: PyPI trusts one workflow in one
+repository. The release workflow runs the full CI on the tagged commit first, and
+refuses to publish if the tag and the package version disagree.
+
+**Trade-off accepted.** A one-time setup on PyPI, and no way to push out a hotfix from a
+laptop: every release is a tag and a wait for CI. For a tool that asks strangers to
+trust it with their keyboard, a release process that cannot leak the author's files is
+worth the wait.

@@ -77,6 +77,20 @@ bump. Anything that changes the meaning of an existing field, or makes a field
 required, bumps `SCHEMA_VERSION` and needs a note in
 [docs/DECISIONS.md](docs/DECISIONS.md). Old recordings must keep loading.
 
+## Releasing
+
+Releases are built and published by CI, never from a local machine
+([ADR-010](docs/DECISIONS.md)).
+
+1. Set the version in `src/stepdub/__init__.py`, the only place it lives, and move the
+   `[Unreleased]` notes in `CHANGELOG.md` under that version with today's date.
+2. Commit, push, and wait for CI to go green.
+3. Tag that commit and push the tag: `git tag v0.1.0 && git push origin v0.1.0`.
+
+The Release workflow reruns the full CI on the tag, builds both distributions, checks
+that the tag matches the package version, and publishes through PyPI Trusted
+Publishing. No API token exists anywhere.
+
 ## Reporting bugs
 
 Include the `stepdub --version`, your OS, and — if the problem is in generated code —

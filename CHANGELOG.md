@@ -32,6 +32,10 @@ ADR-009 in `docs/DECISIONS.md`.
 - End-to-end test suite driving a real browser against a local page, verifying selector
   quality, the recording indicator, and that a typed password reaches neither the
   recording nor the generated code. Skipped when Playwright is not installed.
+- CI builds the wheel, installs it, and runs the whole suite against the installed
+  package in a real browser, so what `pip install` delivers is what gets tested.
+- Releases are built and published by CI through PyPI Trusted Publishing, after the full
+  CI passes on the tagged commit.
 
 ### Security and privacy
 
@@ -39,3 +43,5 @@ ADR-009 in `docs/DECISIONS.md`.
   recording, enforced in two independent layers.
 - No network calls of any kind. No telemetry.
 - `stepdub where` and `stepdub purge --all` make storage inspectable and removable.
+- The source distribution is built from an explicit allowlist, so a file that is only
+  ignored locally can never ship in a release.

@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:  # the release workflow runs all of this before publishing
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -42,3 +43,31 @@ jobs:
 
       - name: Test
         run: pytest
+
+  package:
+    # Tests what `pip install` actually delivers: the built wheel, not the source tree,
+    # with a real browser. The only job that runs the recorder end to end.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Build
+        run: |
+          pip install build twine
+          python -m build
+          twine check --strict dist/*
+
+      - name: Install the wheel and a browser
+        run: |
+          pip install "$(ls dist/*.whl)[web]" pytest
+          python -m playwright install --with-deps chromium
+
+      - name: Test the installed package
+        run: |
+          python -c "import stepdub, sys; sys.exit('site-packages' not in stepdub.__file__)"
+          python -m pytest -o pythonpath= -p no:cacheprovider
