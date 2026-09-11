@@ -125,19 +125,15 @@ def cmd_show(args: argparse.Namespace) -> int:
 def cmd_gen(args: argparse.Namespace) -> int:
     try:
         rec = session.load(args.name)
-        params = _parse_params(args.param)
+        options = GenOptions(
+            function_name=args.function,
+            params=_parse_params(args.param),
+            include_main=not args.no_main,
+        )
+        cleaned = replace(rec, events=run_pipeline(rec.events))
+        code = generate(cleaned, options)
     except (RecordingError, ValueError) as err:
         return _fail(str(err))
-
-    cleaned = replace(rec, events=run_pipeline(rec.events))
-    code = generate(
-        cleaned,
-        GenOptions(
-            function_name=args.function,
-            params=params,
-            include_main=not args.no_main,
-        ),
-    )
 
     if args.stdout:
         print(code, end="")

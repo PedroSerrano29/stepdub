@@ -233,3 +233,32 @@ but URLs change between runs (session ids, query strings) and every event would 
 on one. A new `Action` value also means a recording made with it cannot be read by an
 older stepdub. That is acceptable only because no version had been released yet: it
 ships in 0.1.0.
+
+---
+
+## ADR-012 — A recording is data, never code
+
+**Context.** The generator writes Python from a recording, and a planned `stepdub run`
+will execute that Python directly. A recording is two text files: it can be edited by
+hand, shared by a colleague, or crafted. Several places put recorded text straight into
+the generated source — the recording's name into a docstring, a frame URL into a
+string, a fallback selector and a secret's name into comments — so a line break or a
+closing quote in the file could turn into code.
+
+**Alternatives.** (a) Trust recordings, since the recorder never produces such values.
+(b) Validate recordings on load and refuse anything unusual. (c) Treat every recorded
+value as untrusted at the point where it enters the generated code.
+
+**Choice.** (c). Values become string literals through `_lit()`; text in a comment goes
+through `_plain()` (one line, printable characters only); text in a docstring through
+`_doc()`, which also escapes quotes and backslashes. Names the user picks — the
+function and its parameters — must be Python identifiers the generated code does not
+already use, or generation stops with a message. A test builds a hostile recording
+aimed at each of these places and checks that the generated file's syntax tree holds
+none of it as code.
+
+**Trade-off accepted.** (a) holds only until the first shared recording. (b) would
+reject recordings from sites with unusual text and still leave the generator one missed
+check away from the same bug: escaping at the output is the one place it cannot be
+bypassed. A control character in a name now shows up as a space in the generated
+file's comments, a cosmetic cost.

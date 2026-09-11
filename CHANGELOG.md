@@ -48,3 +48,6 @@ ADR-009 in `docs/DECISIONS.md`.
 - `stepdub where` and `stepdub purge --all` make storage inspectable and removable.
 - The source distribution is built from an explicit allowlist, so a file that is only
   ignored locally can never ship in a release.
+- Everything taken from a recording enters the generated code escaped, so an edited or
+  crafted recording cannot inject code into it. Function and parameter names are
+  checked before generation.

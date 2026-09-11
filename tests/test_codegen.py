@@ -277,3 +277,59 @@ class TestPages:
         assert "not from a recorded step" in code
         assert 'page_2 = page.context.wait_for_event("page")' in code
         ast.parse(code)
+
+
+PAYLOAD = '__import__("sys").exit(99)'
+
+
+class TestARecordingIsDataNeverCode:
+    """A recording file can be edited, shared or crafted. Nothing in it may run."""
+
+    def hostile(self) -> Recording:
+        escape = f'")\n{PAYLOAD}\n#'
+        weak = Target(
+            candidates=(
+                Selector(SelectorKind.TEXT, "Go"),
+                Selector(SelectorKind.CSS, f"div\n{PAYLOAD}\n"),
+            ),
+            frame_url=f"https://x.test/{escape}",
+        )
+        pw = Target(candidates=(Selector(SelectorKind.ID, "pw"),))
+        return Recording(
+            meta=RecordingMeta(name=f'x"""\n{PAYLOAD}\n"""', slug=f"x\n{PAYLOAD}\n"),
+            events=(
+                Event(id=1, ts=0.0, action=Action.NAVIGATE, value=f"https://x.test/{escape}"),
+                Event(id=2, ts=1.0, action=Action.CLICK, target=weak),
+                Event(
+                    id=3,
+                    ts=2.0,
+                    action=Action.FILL,
+                    target=pw,
+                    is_secret=True,
+                    secret_ref=f"pw\n{PAYLOAD}\n",
+                ),
+                Event(id=4, ts=3.0, action=Action.FILL, target=pw, value=escape),
+            ),
+        )
+
+    def test_nothing_in_the_recording_becomes_code(self):
+        tree = ast.parse(gen(self.hostile()))
+        names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+        assert "__import__" not in names
+
+    def test_the_hostile_text_is_neutralised_not_hidden(self):
+        """Whoever reads the generated file should still see what the recording held."""
+        assert "__import__" in gen(self.hostile())
+
+    def test_a_parameter_name_must_be_a_python_name(self, recording):
+        with pytest.raises(ValueError, match="not a valid Python name"):
+            gen(recording, params={6: "term); import os #"})
+
+    def test_a_parameter_cannot_take_a_name_the_code_uses(self, recording):
+        """`page` as a parameter would make run() declare `page` twice."""
+        with pytest.raises(ValueError, match="already used by the generated code"):
+            gen(recording, params={6: "page"})
+
+    def test_the_function_name_must_be_a_python_name(self, recording):
+        with pytest.raises(ValueError, match="not a valid Python name"):
+            gen(recording, function_name="run()\nimport os")

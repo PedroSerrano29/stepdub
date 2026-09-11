@@ -135,6 +135,10 @@ class TestGen:
         assert main(["gen", "login_search"]) == 0
         assert "STEPDUB_PASSWORD" in capsys.readouterr().out
 
+    def test_a_parameter_name_that_is_not_python_gives_a_readable_error(self, home, capsys):
+        assert main(["gen", "login_search", "--param", "6=my term", "--stdout"]) == 1
+        assert "not a valid Python name" in capsys.readouterr().err
+
     def test_no_main_generates_the_function_only(self, home, capsys):
         assert main(["gen", "login_search", "--stdout", "--no-main"]) == 0
         assert "def main()" not in capsys.readouterr().out

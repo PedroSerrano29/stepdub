@@ -44,6 +44,11 @@ permanently, not "not yet". See ADR in [docs/DECISIONS.md](docs/DECISIONS.md).
 stepdub and keep editing the output? No `sleep`, no unreadable selector soup, no
 generated helper the reader has to decode.
 
+**6. A recording is data, never code.** Anything from a recording that reaches the
+generated file goes through `_lit()` (a string literal), `_plain()` (a comment) or
+`_doc()` (a docstring) in `codegen/playwright_py.py`. Recordings get edited and shared;
+see ADR-012.
+
 ## Adding a transformation pass
 
 A pass is a pure function `Sequence[Event] -> tuple[Event, ...]`. It must not touch the
